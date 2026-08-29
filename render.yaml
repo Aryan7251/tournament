@@ -1,0 +1,41 @@
+services:
+  # 1. Node.js Backend API
+  - type: web
+    name: tournament-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: NODE_ENV
+        value: production
+
+  # 2. Super Admin Dashboard
+  - type: web
+    name: tournament-admin
+    runtime: node
+    rootDir: admin
+    plan: free
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: NODE_ENV
+        value: production
+
+  # 3. Flutter Web Player Frontend
+  - type: web
+    name: tournament-frontend
+    runtime: node
+    rootDir: frontend
+    plan: free
+    startCommand: node server.js
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: NODE_ENV
+        value: production

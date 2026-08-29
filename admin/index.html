@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LuckyWin - Super Admin Control Center</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdf4',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              900: '#14532d'
+            },
+            dark: {
+              900: '#0b0f17',
+              800: '#111827',
+              700: '#1f2937',
+              600: '#374151'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <!-- Phosphor / Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark-900 text-gray-100 font-['Plus_Jakarta_Sans',sans-serif] min-h-screen antialiased flex flex-col selection:bg-brand-500 selection:text-white">
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- 1. LOGIN SCREEN -->
+  <div id="login-view" class="fixed inset-0 z-40 flex items-center justify-center bg-dark-900/95 backdrop-blur-md p-4">
+    <div class="w-full max-w-md bg-dark-800 border border-dark-600/60 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+      <!-- Glow decoration -->
+      <div class="absolute -top-24 -right-24 w-48 h-48 bg-brand-500/20 rounded-full blur-3xl"></div>
+      <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-blue-500/20 rounded-full blur-3xl"></div>
+
+      <div class="relative z-10 text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-brand-600 to-emerald-400 text-white shadow-lg shadow-brand-500/30 mb-4">
+          <i data-lucide="shield-check" class="w-9 h-9"></i>
+        </div>
+        <h1 class="text-2xl font-black tracking-tight text-white">Super Admin Portal</h1>
+        <p class="text-xs text-gray-400 mt-1">LuckyWin Tournament & Gaming Management Platform</p>
+      </div>
+
+      <form id="login-form" class="space-y-4 relative z-10">
+        <div>
+          <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Username</label>
+          <div class="relative">
+            <i data-lucide="user" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5"></i>
+            <input type="text" id="login-username" value="admin" required class="w-full bg-dark-900 border border-dark-600 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-2">Password</label>
+          <div class="relative">
+            <i data-lucide="lock" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5"></i>
+            <input type="password" id="login-password" value="admin" required class="w-full bg-dark-900 border border-dark-600 rounded-xl py-2.5 pl-10 pr-4 text-sm text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500">
+          </div>
+        </div>
+
+        <div class="p-3 bg-brand-900/30 border border-brand-700/40 rounded-xl text-xs text-brand-300 flex items-center justify-between">
+          <span>Default: <b>admin / admin</b></span>
+          <button type="button" onclick="document.getElementById('login-username').value='admin'; document.getElementById('login-password').value='admin';" class="text-brand-400 underline font-bold hover:text-white">Auto-fill</button>
+        </div>
+
+        <button type="submit" id="login-btn" class="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition duration-200 flex items-center justify-center gap-2">
+          <span>Enter Admin Control Center</span>
+          <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. MAIN APP SHELL -->
+  <div id="app-shell" class="hidden flex-1 flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-dark-800 border-r border-dark-700 flex flex-col flex-shrink-0">
+      <!-- Brand -->
+      <div class="p-5 border-b border-dark-700 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-emerald-600 flex items-center justify-center text-white font-black shadow-md shadow-brand-500/20">
+          LW
+        </div>
+        <div>
+          <h2 class="font-extrabold text-sm text-white leading-tight">LuckyWin Admin</h2>
+          <span class="text-[10px] uppercase tracking-wider font-bold text-brand-400">Control Panel</span>
+        </div>
+      </div>
+
+      <!-- Navigation -->
+      <nav class="flex-1 p-3 space-y-1.5 overflow-y-auto">
+        <a href="#overview" onclick="switchTab('overview')" class="nav-item active flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="layout-dashboard" class="w-4 h-4 text-emerald-400"></i>
+          <span>Analytics & Overview</span>
+        </a>
+        <a href="#users" onclick="switchTab('users')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="users" class="w-4 h-4 text-blue-400"></i>
+          <span>User Management</span>
+          <span id="badge-users-online" class="ml-auto bg-emerald-500/20 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-extrabold flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="badge-online-count">0 online</span>
+          </span>
+        </a>
+        <a href="#kyc" onclick="switchTab('kyc')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="id-card" class="w-4 h-4 text-amber-400"></i>
+          <span>KYC Verification</span>
+          <span id="badge-kyc" class="ml-auto bg-amber-500/20 text-amber-400 text-[10px] px-2 py-0.5 rounded-full font-extrabold">0</span>
+        </a>
+        <a href="#deposits" onclick="switchTab('deposits')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="arrow-down-left" class="w-4 h-4 text-emerald-400"></i>
+          <span>Manage Deposits</span>
+        </a>
+        <a href="#withdrawals" onclick="switchTab('withdrawals')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="arrow-up-right" class="w-4 h-4 text-rose-400"></i>
+          <span>Manage Withdrawals</span>
+          <span id="badge-withdrawals" class="ml-auto bg-rose-500/20 text-rose-400 text-[10px] px-2 py-0.5 rounded-full font-extrabold">0</span>
+        </a>
+        <a href="#aviator" onclick="switchTab('aviator')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="plane-takeoff" class="w-4 h-4 text-red-400"></i>
+          <span>Aviator Cockpit Engine</span>
+          <span class="ml-auto animate-pulse w-2 h-2 rounded-full bg-red-400"></span>
+        </a>
+        <a href="#ledger" onclick="switchTab('ledger')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="file-text" class="w-4 h-4 text-indigo-400"></i>
+          <span>Global Audit Ledger</span>
+        </a>
+        <a href="#settings" onclick="switchTab('settings')" class="nav-item flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold text-gray-300 hover:bg-dark-700 hover:text-white transition">
+          <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+          <span>Financial Limits</span>
+        </a>
+      </nav>
+
+      <!-- Admin Status Foot -->
+      <div class="p-3 border-t border-dark-700 bg-dark-900/50">
+        <div class="flex items-center justify-between p-2 rounded-xl bg-dark-800">
+          <div class="flex items-center gap-2">
+            <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+              AD
+            </div>
+            <div class="text-[11px]">
+              <div class="font-bold text-white leading-none">admin</div>
+              <div class="text-[9px] text-gray-400">Super Admin</div>
+            </div>
+          </div>
+          <button onclick="logout()" title="Logout" class="text-gray-400 hover:text-rose-400 p-1.5 rounded-lg hover:bg-dark-700 transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col bg-dark-900 overflow-y-auto">
+      <!-- Topbar Header -->
+      <header class="h-16 border-b border-dark-700 bg-dark-800/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
+        <div class="flex items-center gap-3">
+          <h2 id="section-title" class="text-base font-extrabold text-white">Dashboard Overview</h2>
+          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span>API Server 5050 Connected</span>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="refreshCurrentTab()" class="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-dark-700 hover:bg-dark-600 text-xs font-bold text-gray-200 transition border border-dark-600">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+            <span>Refresh</span>
+          </button>
+          <a href="http://localhost:3000" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600/20 hover:bg-brand-600/30 text-brand-400 border border-brand-500/30 text-xs font-bold transition">
+            <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+            <span>Open User App (3000)</span>
+          </a>
+        </div>
+      </header>
+
+      <div class="p-6 flex-1 space-y-6">
+
+        <!-- TAB 1: ANALYTICS OVERVIEW -->
+        <section id="tab-overview" class="tab-pane space-y-6">
+          <!-- Stat Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <!-- 🟢 REAL USERS ONLINE -->
+            <div class="bg-gradient-to-br from-emerald-950/40 via-dark-800 to-dark-800 border border-emerald-500/40 rounded-2xl p-5 relative overflow-hidden shadow-lg shadow-emerald-500/5">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Real Users Online</span>
+                <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black border border-emerald-500/40">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span>LIVE</span>
+                </div>
+              </div>
+              <div class="flex items-baseline gap-2">
+                <span class="text-3xl font-black text-emerald-400" id="stat-online-users">0</span>
+                <span class="text-xs font-extrabold text-emerald-300">Active</span>
+              </div>
+              <div class="text-[11px] text-gray-400 font-semibold mt-1" id="stat-online-sub">0% of players online</div>
+            </div>
+
+            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Platform Revenue</span>
+                <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <i data-lucide="trending-up" class="w-5 h-5"></i>
+                </div>
+              </div>
+              <div class="text-2xl font-black text-white" id="stat-revenue">₹0</div>
+              <div class="text-[11px] text-emerald-400 font-semibold mt-1">Net Platform Turnover</div>
+            </div>
+
+            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Deposits</span>
+                <div class="w-9 h-9 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+                  <i data-lucide="arrow-down-circle" class="w-5 h-5"></i>
+                </div>
+              </div>
+              <div class="text-2xl font-black text-white" id="stat-deposits">₹0</div>
+              <div class="text-[11px] text-gray-400 font-semibold mt-1" id="stat-pending-deposits">0 Pending Review</div>
+            </div>
+
+            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Withdrawals</span>
+                <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
+                  <i data-lucide="arrow-up-circle" class="w-5 h-5"></i>
+                </div>
+              </div>
+              <div class="text-2xl font-black text-white" id="stat-withdrawals">₹0</div>
+              <div class="text-[11px] text-rose-400 font-semibold mt-1" id="stat-pending-withdrawals">0 Pending Payouts</div>
+            </div>
+
+            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-5 relative overflow-hidden">
+              <div class="flex items-center justify-between mb-3">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Users</span>
+                <div class="w-9 h-9 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center">
+                  <i data-lucide="users" class="w-5 h-5"></i>
+                </div>
+              </div>
+              <div class="text-2xl font-black text-white" id="stat-users">0</div>
+              <div class="text-[11px] text-purple-400 font-semibold mt-1" id="stat-verified-kyc">0 Verified KYC</div>
+            </div>
+          </div>
+
+          <!-- Charts & Secondary Row -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 7-Day Chart -->
+            <div class="lg:col-span-2 bg-dark-800 border border-dark-700 rounded-2xl p-6">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="text-sm font-black text-white uppercase tracking-wider">7-Day Cash Flow Analytics</h3>
+                <span class="text-xs text-gray-400">Deposits vs Withdrawals</span>
+              </div>
+              <div class="h-64">
+                <canvas id="cashflow-chart"></canvas>
+              </div>
+            </div>
+
+            <!-- Aviator & Wallet Reserves Overview -->
+            <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6 flex flex-col justify-between">
+              <div>
+                <h3 class="text-sm font-black text-white uppercase tracking-wider mb-4">Platform Balances & Games</h3>
+                <div class="space-y-3">
+                  <div class="p-3 bg-dark-900/60 rounded-xl border border-dark-700 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 font-medium">User Deposit Balances</span>
+                    <span class="text-sm font-black text-white" id="res-deposit-bal">₹0</span>
+                  </div>
+                  <div class="p-3 bg-dark-900/60 rounded-xl border border-dark-700 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 font-medium">User Winning Balances</span>
+                    <span class="text-sm font-black text-emerald-400" id="res-winning-bal">₹0</span>
+                  </div>
+                  <div class="p-3 bg-dark-900/60 rounded-xl border border-dark-700 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 font-medium">Total Aviator Bets Placed</span>
+                    <span class="text-sm font-black text-purple-400" id="res-aviator-bets">₹0</span>
+                  </div>
+                  <div class="p-3 bg-dark-900/60 rounded-xl border border-dark-700 flex justify-between items-center">
+                    <span class="text-xs text-gray-400 font-medium">Completed Aviator Rounds</span>
+                    <span class="text-sm font-black text-blue-400" id="res-aviator-rounds">0</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-4 border-t border-dark-700 mt-4">
+                <button onclick="switchTab('aviator')" class="w-full py-2.5 px-4 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-2">
+                  <i data-lucide="sliders" class="w-4 h-4"></i>
+                  <span>Launch Aviator Control Cockpit</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity Table -->
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-sm font-black text-white uppercase tracking-wider">Live System Transactions</h3>
+              <button onclick="switchTab('ledger')" class="text-xs text-brand-400 hover:underline font-bold">View Full Ledger →</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead>
+                  <tr class="text-gray-400 border-b border-dark-700">
+                    <th class="pb-3 font-bold">TXN ID</th>
+                    <th class="pb-3 font-bold">USER</th>
+                    <th class="pb-3 font-bold">TYPE</th>
+                    <th class="pb-3 font-bold">AMOUNT</th>
+                    <th class="pb-3 font-bold">DETAILS</th>
+                    <th class="pb-3 font-bold">STATUS</th>
+                    <th class="pb-3 font-bold">TIME</th>
+                  </tr>
+                </thead>
+                <tbody id="overview-txns-tbody" class="divide-y divide-dark-700">
+                  <!-- Filled via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 2: USERS MANAGEMENT -->
+        <section id="tab-users" class="tab-pane hidden space-y-6">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="relative w-full sm:w-80">
+              <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3"></i>
+              <input type="text" id="user-search-input" onkeyup="filterUsers()" placeholder="Search username, email, phone..." class="w-full bg-dark-800 border border-dark-700 rounded-xl py-2 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-brand-500">
+            </div>
+            <div class="flex items-center gap-3 w-full sm:w-auto">
+              <select id="user-status-filter" onchange="loadUsers()" class="bg-dark-800 border border-dark-700 rounded-xl px-3 py-2 text-xs text-emerald-400 font-bold focus:outline-none border-emerald-500/30">
+                <option value="">All Activity</option>
+                <option value="online">🟢 Online Now Only</option>
+                <option value="offline">⚪ Offline Only</option>
+              </select>
+              <select id="user-kyc-filter" onchange="loadUsers()" class="bg-dark-800 border border-dark-700 rounded-xl px-3 py-2 text-xs text-gray-300 font-bold focus:outline-none">
+                <option value="">All KYC Status</option>
+                <option value="verified">Verified Only</option>
+                <option value="pending">Pending Only</option>
+                <option value="not_submitted">Not Submitted</option>
+              </select>
+              <button onclick="openAddUserModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition shadow-md shadow-brand-500/20">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>Add New User</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-dark-900/60 text-gray-400 border-b border-dark-700">
+                  <tr>
+                    <th class="p-4 font-bold">USER</th>
+                    <th class="p-4 font-bold">LIVE PRESENCE</th>
+                    <th class="p-4 font-bold">CONTACT</th>
+                    <th class="p-4 font-bold">WALLET BALANCES</th>
+                    <th class="p-4 font-bold">KYC STATUS</th>
+                    <th class="p-4 font-bold">JOINED</th>
+                    <th class="p-4 font-bold text-right">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="users-tbody" class="divide-y divide-dark-700">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 3: KYC VERIFICATION -->
+        <section id="tab-kyc" class="tab-pane hidden space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Identity & KYC Approval Queue</h3>
+              <p class="text-xs text-gray-400">Review government-issued IDs for anti-fraud compliance.</p>
+            </div>
+            <select id="kyc-status-filter" onchange="loadKycList()" class="bg-dark-800 border border-dark-700 rounded-xl px-3 py-2 text-xs text-gray-300 font-bold focus:outline-none">
+              <option value="">All Records</option>
+              <option value="pending">Pending Approval</option>
+              <option value="verified">Approved / Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-dark-900/60 text-gray-400 border-b border-dark-700">
+                  <tr>
+                    <th class="p-4 font-bold">USER</th>
+                    <th class="p-4 font-bold">DOCUMENT TYPE</th>
+                    <th class="p-4 font-bold">DOCUMENT NUMBER</th>
+                    <th class="p-4 font-bold">STATUS</th>
+                    <th class="p-4 font-bold">SUBMITTED DATE</th>
+                    <th class="p-4 font-bold text-right">REVIEW ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="kyc-tbody" class="divide-y divide-dark-700">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 4: MANAGE DEPOSITS -->
+        <section id="tab-deposits" class="tab-pane hidden space-y-6">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="relative w-full sm:w-80">
+              <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3.5 top-3"></i>
+              <input type="text" id="deposit-search-input" onkeyup="filterDeposits()" placeholder="Search UTR, TXN ID, Username..." class="w-full bg-dark-800 border border-dark-700 rounded-xl py-2 pl-10 pr-4 text-xs text-white focus:outline-none focus:border-brand-500">
+            </div>
+            <button onclick="openManualCreditModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center gap-2 transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Manual Wallet Credit</span>
+            </button>
+          </div>
+
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-dark-900/60 text-gray-400 border-b border-dark-700">
+                  <tr>
+                    <th class="p-4 font-bold">TXN ID</th>
+                    <th class="p-4 font-bold">USER</th>
+                    <th class="p-4 font-bold">AMOUNT</th>
+                    <th class="p-4 font-bold">UTR / REFERENCE</th>
+                    <th class="p-4 font-bold">METHOD</th>
+                    <th class="p-4 font-bold">STATUS</th>
+                    <th class="p-4 font-bold">DATE</th>
+                  </tr>
+                </thead>
+                <tbody id="deposits-tbody" class="divide-y divide-dark-700">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: MANAGE WITHDRAWALS -->
+        <section id="tab-withdrawals" class="tab-pane hidden space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Player Withdrawal & Payout Requests</h3>
+              <p class="text-xs text-gray-400">Approve IMPS bank transfers, UPI payouts or reject with instant refund.</p>
+            </div>
+            <select id="withdrawal-filter" onchange="loadWithdrawals()" class="bg-dark-800 border border-dark-700 rounded-xl px-3 py-2 text-xs text-gray-300 font-bold focus:outline-none">
+              <option value="">All Requests</option>
+              <option value="pending">Pending Approval</option>
+              <option value="completed">Completed / Settled</option>
+              <option value="rejected">Rejected / Refunded</option>
+            </select>
+          </div>
+
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-dark-900/60 text-gray-400 border-b border-dark-700">
+                  <tr>
+                    <th class="p-4 font-bold">REQ ID</th>
+                    <th class="p-4 font-bold">USER</th>
+                    <th class="p-4 font-bold">AMOUNT</th>
+                    <th class="p-4 font-bold">PAYOUT DESTINATION</th>
+                    <th class="p-4 font-bold">KYC</th>
+                    <th class="p-4 font-bold">STATUS</th>
+                    <th class="p-4 font-bold">REQUESTED</th>
+                    <th class="p-4 font-bold text-right">ACTION</th>
+                  </tr>
+                </thead>
+                <tbody id="withdrawals-tbody" class="divide-y divide-dark-700">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 6: AVIATOR CONTROL COCKPIT -->
+        <section id="tab-aviator" class="tab-pane hidden space-y-6">
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <!-- Cockpit Live Radar (Expanded Width & Visuals) -->
+            <div class="xl:col-span-2 bg-gradient-to-br from-dark-900 via-dark-800 to-dark-900 border border-red-500/30 rounded-3xl p-6 relative overflow-hidden flex flex-col justify-between min-h-[440px] shadow-2xl shadow-red-500/5">
+              <!-- Radar Background Grid Overlay -->
+              <div class="absolute inset-0 opacity-15 pointer-events-none bg-[radial-gradient(#ef4444_1px,transparent_1px)] [background-size:24px_24px]"></div>
+
+              <div class="flex items-center justify-between relative z-10">
+                <div class="flex items-center gap-2">
+                  <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
+                  <span class="text-xs font-black uppercase tracking-wider text-red-400">Live Crash Engine Cockpit</span>
+                </div>
+                <div id="aviator-state-badge" class="px-3.5 py-1 rounded-full text-xs font-black uppercase bg-dark-900 border border-dark-600 text-gray-300 shadow-md">
+                  WAITING
+                </div>
+              </div>
+
+              <!-- Main Multiplier Display with Neon Glow -->
+              <div class="my-auto text-center relative z-10 py-6">
+                <div id="aviator-live-multiplier" class="text-7xl sm:text-8xl font-black text-white tracking-tight drop-shadow-[0_10px_25px_rgba(239,68,68,0.4)] transition-all duration-150">
+                  1.00x
+                </div>
+                <div id="aviator-status-text" class="text-xs font-bold text-gray-400 mt-3 uppercase tracking-widest flex items-center justify-center gap-2">
+                  <span>Preparing flight telemetry...</span>
+                </div>
+              </div>
+
+              <!-- Live Override Bar -->
+              <div class="p-4 bg-dark-900/90 backdrop-blur-md rounded-2xl border border-dark-700 relative z-10 flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <div class="text-[10px] uppercase font-bold text-gray-400">Engine Flight Target</div>
+                  <div id="aviator-target-display" class="text-xl font-black text-emerald-400">2.45x</div>
+                </div>
+                <div class="flex items-center gap-2.5">
+                  <button onclick="forceCrashNow()" class="px-4 py-2.5 bg-red-600 hover:bg-red-500 text-white font-black rounded-xl text-xs flex items-center gap-1.5 transition shadow-lg shadow-red-500/25">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    <span>Force Crash Now</span>
+                  </button>
+                  <button onclick="resetFairMode()" class="px-3.5 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-200 font-bold rounded-xl text-xs transition">
+                    Reset Fair Mode
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Set Multiplier Controls -->
+            <div class="bg-dark-800 border border-dark-700 rounded-3xl p-6 flex flex-col justify-between">
+              <div>
+                <h3 class="text-sm font-black text-white uppercase tracking-wider mb-2">Override Crash Result</h3>
+                <p class="text-xs text-gray-400 mb-4">Preset the exact multiplier for the active or upcoming flight.</p>
+
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-[11px] font-bold text-gray-300 mb-1">Target Multiplier (e.g. 1.15, 2.50, 10.00)</label>
+                    <div class="flex gap-2">
+                      <input type="number" id="aviator-override-input" step="0.01" min="1.00" max="100.00" placeholder="2.00" class="flex-1 bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-sm text-white font-bold focus:outline-none focus:border-red-500">
+                      <button onclick="applyMultiplierOverride()" class="px-4 py-2 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-bold rounded-xl text-xs transition">
+                        SET
+                      </button>
+                    </div>
+                  </div>
+
+                  <!-- Quick Crash Presets -->
+                  <div class="pt-2">
+                    <div class="text-[11px] font-bold text-gray-400 mb-2">Quick Presets:</div>
+                    <div class="grid grid-cols-4 gap-2">
+                      <button onclick="setPresetMultiplier(1.02)" class="py-1.5 bg-dark-900 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 rounded-lg text-xs font-bold transition">1.02x</button>
+                      <button onclick="setPresetMultiplier(1.20)" class="py-1.5 bg-dark-900 hover:bg-red-500/20 hover:text-red-400 border border-dark-700 rounded-lg text-xs font-bold transition">1.20x</button>
+                      <button onclick="setPresetMultiplier(1.85)" class="py-1.5 bg-dark-900 hover:bg-emerald-500/20 hover:text-emerald-400 border border-dark-700 rounded-lg text-xs font-bold transition">1.85x</button>
+                      <button onclick="setPresetMultiplier(2.50)" class="py-1.5 bg-dark-900 hover:bg-emerald-500/20 hover:text-emerald-400 border border-dark-700 rounded-lg text-xs font-bold transition">2.50x</button>
+                      <button onclick="setPresetMultiplier(5.00)" class="py-1.5 bg-dark-900 hover:bg-blue-500/20 hover:text-blue-400 border border-dark-700 rounded-lg text-xs font-bold transition">5.00x</button>
+                      <button onclick="setPresetMultiplier(10.00)" class="py-1.5 bg-dark-900 hover:bg-purple-500/20 hover:text-purple-400 border border-dark-700 rounded-lg text-xs font-bold transition">10.0x</button>
+                      <button onclick="setPresetMultiplier(25.00)" class="py-1.5 bg-dark-900 hover:bg-purple-500/20 hover:text-purple-400 border border-dark-700 rounded-lg text-xs font-bold transition">25.0x</button>
+                      <button onclick="setPresetMultiplier(100.00)" class="py-1.5 bg-dark-900 hover:bg-amber-500/20 hover:text-amber-400 border border-dark-700 rounded-lg text-xs font-bold transition">100x</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- History ribbon -->
+              <div class="mt-4 pt-4 border-t border-dark-700">
+                <div class="text-[11px] font-bold text-gray-400 mb-2">Recent Flight Multipliers:</div>
+                <div class="flex flex-wrap gap-1.5" id="aviator-history-ribbon">
+                  <!-- Injected via JS -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 8: GLOBAL AUDIT LEDGER -->
+        <section id="tab-ledger" class="tab-pane hidden space-y-6">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-extrabold text-white">Full Transaction Audit Ledger</h3>
+            <button onclick="loadLedger()" class="px-3 py-1.5 bg-dark-800 border border-dark-700 hover:bg-dark-700 rounded-xl text-xs font-bold text-gray-200">Refresh Ledger</button>
+          </div>
+
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-dark-900/60 text-gray-400 border-b border-dark-700">
+                  <tr>
+                    <th class="p-4 font-bold">TXN ID</th>
+                    <th class="p-4 font-bold">USER</th>
+                    <th class="p-4 font-bold">CATEGORY</th>
+                    <th class="p-4 font-bold">AMOUNT</th>
+                    <th class="p-4 font-bold">TITLE & DETAILS</th>
+                    <th class="p-4 font-bold">STATUS</th>
+                    <th class="p-4 font-bold">TIMESTAMP</th>
+                  </tr>
+                </thead>
+                <tbody id="ledger-tbody" class="divide-y divide-dark-700">
+                  <!-- Injected via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 9: FINANCIAL LIMITS & PAYMENT GATEWAY SETTINGS -->
+        <section id="tab-settings" class="tab-pane hidden space-y-6">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-base font-extrabold text-white">Financial Rules & Razorpay Gateway Setup</h3>
+              <p class="text-xs text-gray-400">Configure Razorpay API credentials, environment mode, and deposit/withdrawal financial limits.</p>
+            </div>
+            <button onclick="loadSettings()" class="px-3.5 py-1.5 bg-dark-800 border border-dark-700 hover:bg-dark-700 rounded-xl text-xs font-bold text-gray-200 flex items-center gap-1.5">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              <span>Refresh Settings</span>
+            </button>
+          </div>
+
+          <!-- Razorpay Payment Gateway Configuration Card -->
+          <div class="bg-dark-800 border border-blue-500/30 rounded-3xl p-6 relative overflow-hidden shadow-2xl shadow-blue-500/5">
+            <div class="absolute -top-16 -right-16 w-36 h-36 bg-blue-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-dark-700">
+              <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/25">
+                  <i data-lucide="credit-card" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-base font-black text-white">Razorpay Payment Gateway</h4>
+                    <span id="rzp-status-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                      ACTIVE GATEWAY
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-400">Accept UPI (GPay, PhonePe, Paytm), Debit/Credit Cards, Net Banking & Wallets directly.</p>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="setting-razorpay-enabled" checked class="sr-only peer">
+                  <div class="w-11 h-6 bg-dark-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span class="ml-2 text-xs font-bold text-gray-300">Enable Razorpay</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="mt-6 space-y-5">
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Razorpay Key ID -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-2xl space-y-2">
+                  <label class="block text-xs font-bold text-blue-400 uppercase tracking-wider">Razorpay Key ID *</label>
+                  <input type="text" id="setting-razorpay-key-id" placeholder="rzp_test_... or rzp_live_..." class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-white focus:border-blue-500 focus:outline-none">
+                  <p class="text-[10px] text-gray-400">Razorpay Dashboard &gt; Account &amp; Settings &gt; API Keys.</p>
+                </div>
+
+                <!-- Razorpay Key Secret -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-2xl space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-blue-400 uppercase tracking-wider">Razorpay Key Secret *</label>
+                    <button type="button" onclick="toggleSecretVisibility('setting-razorpay-key-secret')" class="text-[10px] text-blue-400 hover:underline font-bold">Show / Hide</button>
+                  </div>
+                  <input type="password" id="setting-razorpay-key-secret" placeholder="••••••••••••••••••••••••" class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-white focus:border-blue-500 focus:outline-none">
+                  <p class="text-[10px] text-gray-400">Used for HMAC SHA-256 payment signature verification.</p>
+                </div>
+
+                <!-- Razorpay Webhook Secret -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-2xl space-y-2">
+                  <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-indigo-400 uppercase tracking-wider">Webhook Secret</label>
+                    <button type="button" onclick="toggleSecretVisibility('setting-razorpay-webhook-secret')" class="text-[10px] text-indigo-400 hover:underline font-bold">Show / Hide</button>
+                  </div>
+                  <input type="password" id="setting-razorpay-webhook-secret" placeholder="Optional webhook verification secret" class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-xs font-mono font-bold text-white focus:border-indigo-500 focus:outline-none">
+                  <p class="text-[10px] text-gray-400">Secret configured in Razorpay Webhooks.</p>
+                </div>
+              </div>
+
+              <!-- Webhook URL Display & Copy -->
+              <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-2xl space-y-2">
+                <label class="block text-xs font-bold text-gray-300 uppercase tracking-wider">Webhook Endpoint URL</label>
+                <div class="flex gap-2">
+                  <input type="text" id="setting-rzp-webhook-url" readonly value="http://localhost:5050/api/wallet/razorpay/webhook" class="w-full bg-dark-800 border border-dark-600 rounded-xl px-3 py-2 text-xs font-mono text-gray-300 select-all">
+                  <button type="button" onclick="copyWebhookUrl()" class="px-3.5 py-2 bg-dark-700 hover:bg-dark-600 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 whitespace-nowrap">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                    <span>Copy</span>
+                  </button>
+                </div>
+                <p class="text-[11px] text-gray-400">Add this webhook URL in your Razorpay Dashboard &gt; Webhooks to auto-capture payments.</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Live Financial Limits Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 bg-dark-800 border border-dark-700 rounded-2xl">
+              <div class="text-[10px] uppercase font-extrabold text-emerald-400 mb-1">Active Min Deposit</div>
+              <div id="stat-min-deposit" class="text-2xl font-black text-white">₹50</div>
+              <div class="text-[10px] text-gray-400 mt-1">Minimum cash a player can add</div>
+            </div>
+            <div class="p-4 bg-dark-800 border border-dark-700 rounded-2xl">
+              <div class="text-[10px] uppercase font-extrabold text-rose-400 mb-1">Active Min Withdrawal</div>
+              <div id="stat-min-withdrawal" class="text-2xl font-black text-white">₹50</div>
+              <div class="text-[10px] text-gray-400 mt-1">Minimum payout a player can request</div>
+            </div>
+            <div class="p-4 bg-dark-800 border border-dark-700 rounded-2xl">
+              <div class="text-[10px] uppercase font-extrabold text-blue-400 mb-1">Active Max Deposit</div>
+              <div id="stat-max-deposit" class="text-2xl font-black text-white">₹50,000</div>
+              <div class="text-[10px] text-gray-400 mt-1">Maximum single / daily deposit cap</div>
+            </div>
+            <div class="p-4 bg-dark-800 border border-dark-700 rounded-2xl">
+              <div class="text-[10px] uppercase font-extrabold text-amber-400 mb-1">Active Max Withdrawal</div>
+              <div id="stat-max-withdrawal" class="text-2xl font-black text-white">₹1,00,000</div>
+              <div class="text-[10px] text-gray-400 mt-1">Maximum single withdrawal cap</div>
+            </div>
+          </div>
+
+          <!-- Edit Financial Thresholds Form Card -->
+          <div class="bg-dark-800 border border-dark-700 rounded-2xl p-6">
+            <h4 class="text-sm font-extrabold text-white mb-4 flex items-center gap-2">
+              <i data-lucide="sliders" class="w-4 h-4 text-purple-400"></i>
+              <span>Financial Deposit & Withdrawal Thresholds</span>
+            </h4>
+            <form id="settings-form" onsubmit="saveFinancialSettings(event)" class="space-y-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Minimum Deposit -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-xl space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-emerald-400 uppercase tracking-wider">Minimum Deposit Amount (₹)</label>
+                    <span class="text-[10px] bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-md">Deposit Gate</span>
+                  </div>
+                  <input type="number" id="setting-min-deposit" min="1" required class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:border-emerald-500 focus:outline-none">
+                  <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('setting-min-deposit').value=10" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹10</button>
+                    <button type="button" onclick="document.getElementById('setting-min-deposit').value=50" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹50</button>
+                    <button type="button" onclick="document.getElementById('setting-min-deposit').value=100" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹100</button>
+                    <button type="button" onclick="document.getElementById('setting-min-deposit').value=500" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹500</button>
+                  </div>
+                </div>
+
+                <!-- Minimum Withdrawal -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-xl space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-rose-400 uppercase tracking-wider">Minimum Withdrawal Amount (₹)</label>
+                    <span class="text-[10px] bg-rose-500/20 text-rose-300 font-extrabold px-2 py-0.5 rounded-md">Payout Gate</span>
+                  </div>
+                  <input type="number" id="setting-min-withdrawal" min="1" required class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:border-rose-500 focus:outline-none">
+                  <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('setting-min-withdrawal').value=50" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹50</button>
+                    <button type="button" onclick="document.getElementById('setting-min-withdrawal').value=100" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹100</button>
+                    <button type="button" onclick="document.getElementById('setting-min-withdrawal').value=200" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹200</button>
+                    <button type="button" onclick="document.getElementById('setting-min-withdrawal').value=500" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹500</button>
+                  </div>
+                </div>
+
+                <!-- Maximum Deposit -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-xl space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-blue-400 uppercase tracking-wider">Maximum Single Deposit Limit (₹)</label>
+                    <span class="text-[10px] bg-blue-500/20 text-blue-300 font-extrabold px-2 py-0.5 rounded-md">Safety Cap</span>
+                  </div>
+                  <input type="number" id="setting-max-deposit" min="100" required class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:border-blue-500 focus:outline-none">
+                  <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('setting-max-deposit').value=10000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹10,000</button>
+                    <button type="button" onclick="document.getElementById('setting-max-deposit').value=25000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹25,000</button>
+                    <button type="button" onclick="document.getElementById('setting-max-deposit').value=50000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹50,000</button>
+                    <button type="button" onclick="document.getElementById('setting-max-deposit').value=100000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹1,00,000</button>
+                  </div>
+                </div>
+
+                <!-- Maximum Withdrawal -->
+                <div class="p-4 bg-dark-900/60 border border-dark-700 rounded-xl space-y-3">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-amber-400 uppercase tracking-wider">Maximum Single Withdrawal Limit (₹)</label>
+                    <span class="text-[10px] bg-amber-500/20 text-amber-300 font-extrabold px-2 py-0.5 rounded-md">Safety Cap</span>
+                  </div>
+                  <input type="number" id="setting-max-withdrawal" min="100" required class="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-2.5 text-sm font-bold text-white focus:border-amber-500 focus:outline-none">
+                  <div class="flex gap-2">
+                    <button type="button" onclick="document.getElementById('setting-max-withdrawal').value=25000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹25,000</button>
+                    <button type="button" onclick="document.getElementById('setting-max-withdrawal').value=50000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹50,000</button>
+                    <button type="button" onclick="document.getElementById('setting-max-withdrawal').value=100000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹1,00,000</button>
+                    <button type="button" onclick="document.getElementById('setting-max-withdrawal').value=200000" class="px-2.5 py-1 bg-dark-800 hover:bg-dark-700 border border-dark-600 rounded-lg text-xs font-bold text-gray-300">₹2,00,000</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="pt-2 flex justify-end">
+                <button type="submit" class="px-6 py-3 bg-gradient-to-r from-brand-600 to-emerald-600 hover:from-brand-500 hover:to-emerald-500 text-white font-black rounded-xl text-xs shadow-lg shadow-brand-500/20 transition flex items-center gap-2">
+                  <i data-lucide="save" class="w-4 h-4"></i>
+                  <span>Save All Rules & Razorpay Configuration</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ================= MODALS ================= -->
+
+  <!-- Modal: Add User -->
+  <div id="modal-add-user" class="fixed inset-0 z-50 hidden bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-black text-white">Create New Player Account</h3>
+        <button onclick="closeModal('modal-add-user')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="add-user-form" onsubmit="submitAddUser(event)" class="space-y-3">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Username *</label>
+            <input type="text" id="add-username" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Full Name *</label>
+            <input type="text" id="add-fullname" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Email Address *</label>
+            <input type="email" id="add-email" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Phone Number *</label>
+            <input type="text" id="add-phone" required placeholder="+91 9876543210" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Deposit Cash (₹)</label>
+            <input type="number" id="add-deposit" value="500" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Winnings (₹)</label>
+            <input type="number" id="add-winnings" value="0" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">KYC Status</label>
+            <select id="add-kyc" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="verified">Verified</option>
+              <option value="pending">Pending</option>
+              <option value="not_submitted">Not Submitted</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modal-add-user')" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 font-bold rounded-xl text-xs">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs">Create User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit User & Balances -->
+  <div id="modal-edit-user" class="fixed inset-0 z-50 hidden bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-black text-white">Edit User Profile & Wallets</h3>
+        <button onclick="closeModal('modal-edit-user')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="edit-user-form" onsubmit="submitEditUser(event)" class="space-y-3">
+        <input type="hidden" id="edit-user-id">
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Username</label>
+            <input type="text" id="edit-username" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Full Name</label>
+            <input type="text" id="edit-fullname" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Email</label>
+            <input type="email" id="edit-email" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Phone</label>
+            <input type="text" id="edit-phone" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+        </div>
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Deposit Balance (₹)</label>
+            <input type="number" id="edit-deposit" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Winning Balance (₹)</label>
+            <input type="number" id="edit-winnings" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">KYC Status</label>
+            <select id="edit-kyc" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="verified">Verified</option>
+              <option value="pending">Pending</option>
+              <option value="not_submitted">Not Submitted</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modal-edit-user')" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 font-bold rounded-xl text-xs">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Manual Credit Balance -->
+  <div id="modal-manual-credit" class="fixed inset-0 z-50 hidden bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-black text-white">Manual Wallet Credit</h3>
+        <button onclick="closeModal('modal-manual-credit')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="manual-credit-form" onsubmit="submitManualCredit(event)" class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1">Select User *</label>
+          <select id="credit-user-select" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+            <!-- Injected via JS -->
+          </select>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Amount (₹) *</label>
+            <input type="number" id="credit-amount" min="1" required class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-300 mb-1">Balance Type</label>
+            <select id="credit-balance-type" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="deposit">Deposit Wallet</option>
+              <option value="winning">Winning Wallet</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1">Note / Reason</label>
+          <input type="text" id="credit-note" placeholder="Admin bonus / compensation" class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div class="pt-3 flex justify-end gap-2">
+          <button type="button" onclick="closeModal('modal-manual-credit')" class="px-4 py-2 bg-dark-700 hover:bg-dark-600 text-gray-300 font-bold rounded-xl text-xs">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs">Credit Now</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Review KYC -->
+  <div id="modal-review-kyc" class="fixed inset-0 z-50 hidden bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-md bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-base font-black text-white">KYC Verification Review</h3>
+        <button onclick="closeModal('modal-review-kyc')" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <input type="hidden" id="kyc-review-user-id">
+      <div class="space-y-3 mb-4">
+        <div class="p-3 bg-dark-900 rounded-xl border border-dark-700">
+          <div class="text-[10px] uppercase font-bold text-gray-400">User Account</div>
+          <div id="kyc-review-username" class="text-sm font-bold text-white">Player</div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div class="p-3 bg-dark-900 rounded-xl border border-dark-700">
+            <div class="text-[10px] uppercase font-bold text-gray-400">Document Type</div>
+            <div id="kyc-review-doctype" class="text-sm font-bold text-brand-400">PAN Card</div>
+          </div>
+          <div class="p-3 bg-dark-900 rounded-xl border border-dark-700">
+            <div class="text-[10px] uppercase font-bold text-gray-400">Document Number</div>
+            <div id="kyc-review-docnum" class="text-sm font-bold text-white">ABCDE1234F</div>
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1">Rejection Reason (if rejecting)</label>
+          <input type="text" id="kyc-reject-reason" placeholder="Blurry photo, mismatch with bank name..." class="w-full bg-dark-900 border border-dark-600 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="submitKycDecision('rejected')" class="flex-1 py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 font-bold rounded-xl text-xs transition">
+          Reject KYC ❌
+        </button>
+        <button onclick="submitKycDecision('verified')" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition">
+          Approve KYC ✅
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

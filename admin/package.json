@@ -1,0 +1,14 @@
+{
+  "name": "tournament-admin",
+  "version": "1.0.0",
+  "description": "Admin Panel & Management Dashboard for Tournament Arena",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "serve": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["admin", "dashboard", "esports", "tournaments"],
+  "author": "",
+  "license": "ISC"
+}

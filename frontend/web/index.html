@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <!--
+    If you are serving your web app in a path other than the root, change the
+    href value below to reflect the base path you are serving from.
+
+    The path provided below has to start and end with a slash "/" in order for
+    it to work correctly.
+
+    For more details:
+    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
+
+    This is a placeholder for base href that will be replaced by the value of
+    the `--base-href` argument provided to `flutter build`.
+  -->
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="LuckyWin - Premier Gaming Tournaments and Aviator Arena">
+
+  <!-- iOS meta tags & icons -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LuckyWin">
+  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="favicon.png"/>
+
+  <title>LuckyWin - Gaming & Esports Arena</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body {
+      margin: 0;
+      background-color: #020617;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    #app-loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 60%, #020617 100%);
+      z-index: 999999;
+      color: #fff;
+      transition: opacity 0.5s ease;
+    }
+    .loading-logo-box {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .loading-ring {
+      position: absolute;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      border-top-color: #6366f1;
+      border-right-color: #38bdf8;
+      border-bottom-color: #10b981;
+      animation: spinRing 2s linear infinite;
+    }
+    .loading-pulse-glow {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(99, 102, 241, 0.35);
+      filter: blur(15px);
+      animation: pulseGlow 1.5s ease-in-out infinite alternate;
+    }
+    .loading-emblem {
+      position: relative;
+      width: 74px;
+      height: 74px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #4f46e5, #2563eb, #0d9488);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+      border: 1.5px solid rgba(255,255,255,0.25);
+    }
+    .loading-emblem svg {
+      width: 38px;
+      height: 38px;
+      fill: #ffffff;
+    }
+    .brand-title {
+      font-size: 26px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      margin-top: 24px;
+      display: flex;
+      gap: 4px;
+    }
+    .brand-accent {
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .brand-tag {
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      color: #94a3b8;
+      margin-top: 6px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .progress-track {
+      width: 180px;
+      height: 4px;
+      background: #1e293b;
+      border-radius: 10px;
+      margin-top: 36px;
+      overflow: hidden;
+      position: relative;
+    }
+    .progress-fill {
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 45%;
+      background: linear-gradient(90deg, #38bdf8, #6366f1, #10b981);
+      border-radius: 10px;
+      animation: progressIndeterminate 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+    @keyframes spinRing {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes pulseGlow {
+      0% { transform: scale(0.9); opacity: 0.5; }
+      100% { transform: scale(1.15); opacity: 0.9; }
+    }
+    @keyframes progressIndeterminate {
+      0% { left: -40%; width: 30%; }
+      50% { left: 30%; width: 60%; }
+      100% { left: 100%; width: 30%; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Web Startup Animated Preloader -->
+  <div id="app-loading-screen">
+    <div class="loading-logo-box">
+      <div class="loading-ring"></div>
+      <div class="loading-pulse-glow"></div>
+      <div class="loading-emblem">
+        <svg viewBox="0 0 24 24">
+          <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
+        </svg>
+      </div>
+    </div>
+    <div class="brand-title">
+      <span>LUCKY</span><span class="brand-accent">WIN</span>
+    </div>
+    <div class="brand-tag">PREMIER GAMING & ESPORTS ARENA</div>
+    <div class="progress-track">
+      <div class="progress-fill"></div>
+    </div>
+  </div>
+
+  <script>
+    // Remove loading screen when Flutter is ready
+    window.addEventListener('flutter-first-frame', function () {
+      const loader = document.getElementById('app-loading-screen');
+      if (loader) {
+        loader.style.opacity = '0';
+        setTimeout(() => loader.remove(), 500);
+      }
+    });
+
+    // Web Audio Synthesizer for Aviator Sound Effects
+    (function() {
+      let audioCtx = null;
+      let engineOsc = null;
+      let engineGain = null;
+      let isMuted = false;
+
+      function getAudioContext() {
+        if (!audioCtx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            audioCtx = new AudioContext();
+          }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+        return audioCtx;
+      }
+
+      window.aviatorAudio = {
+        setMuted: function(muted) {
+          isMuted = !!muted;
+          if (isMuted) {
+            window.aviatorAudio.stopEngine();
+          }
+        },
+
+        startEngine: function() {
+          if (isMuted) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            window.aviatorAudio.stopEngine();
+
+            engineOsc = ctx.createOscillator();
+            engineGain = ctx.createGain();
+
+            engineOsc.type = 'sawtooth';
+            engineOsc.frequency.setValueAtTime(110, ctx.currentTime);
+
+            // Lowpass filter for smooth engine rumble
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(320, ctx.currentTime);
+
+            engineGain.gain.setValueAtTime(0.01, ctx.currentTime);
+            engineGain.gain.linearRampToValueAtTime(0.06, ctx.currentTime + 0.3);
+
+            engineOsc.connect(filter);
+            filter.connect(engineGain);
+            engineGain.connect(ctx.destination);
+
+            engineOsc.start();
+          } catch(e) {
+            console.warn('Audio engine error:', e);
+          }
+        },
+
+        updateEnginePitch: function(multiplier) {
+          if (isMuted || !engineOsc || !audioCtx) return;
+          try {
+            const m = Math.max(1.0, multiplier);
+            const freq = Math.min(650, 110 + (m - 1.0) * 45);
+            engineOsc.frequency.setTargetAtTime(freq, audioCtx.currentTime, 0.05);
+          } catch(e) {}
+        },
+
+        stopEngine: function() {
+          try {
+            if (engineGain && audioCtx) {
+              engineGain.gain.linearRampToValueAtTime(0.0001, audioCtx.currentTime + 0.1);
+            }
+            if (engineOsc) {
+              setTimeout(() => {
+                try { engineOsc.stop(); engineOsc.disconnect(); } catch(_) {}
+                engineOsc = null;
+              }, 120);
+            }
+          } catch(e) {
+            engineOsc = null;
+          }
+        },
+
+        playCashout: function() {
+          if (isMuted) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+            notes.forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'triangle';
+              osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.07);
+
+              gain.gain.setValueAtTime(0.12, ctx.currentTime + idx * 0.07);
+              gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.07 + 0.25);
+
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(ctx.currentTime + idx * 0.07);
+              osc.stop(ctx.currentTime + idx * 0.07 + 0.3);
+            });
+          } catch(e) {}
+        },
+
+        playCrash: function() {
+          if (isMuted) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            window.aviatorAudio.stopEngine();
+
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(180, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, ctx.currentTime + 0.4);
+
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.45);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+          } catch(e) {}
+        },
+
+        playTick: function() {
+          if (isMuted) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, ctx.currentTime);
+
+            gain.gain.setValueAtTime(0.06, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.06);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.08);
+          } catch(e) {}
+        },
+
+        playBet: function() {
+          if (isMuted) return;
+          try {
+            const ctx = getAudioContext();
+            if (!ctx) return;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(800, ctx.currentTime + 0.08);
+
+            gain.gain.setValueAtTime(0.08, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.1);
+
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.12);
+          } catch(e) {}
+        }
+      };
+    })();
+  </script>
+  <script src="flutter_bootstrap.js" async></script>
+</body>
+</html>
