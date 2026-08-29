@@ -122,19 +122,12 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
     super.initState();
     _loadMultipliers();
 
-    // Continuous 60fps Game Loop
+    // Continuous 60fps Game Loop for Board Physics
     _gameLoopController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
     )..addListener(_onGameTick);
     _gameLoopController.repeat();
-
-    _betController.addListener(() {
-      final val = int.tryParse(_betController.text);
-      if (val != null && val != _betAmount) {
-        setState(() => _betAmount = val);
-      }
-    });
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _refreshHistory();
@@ -195,10 +188,9 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
   void _onGameTick() {
     if (!mounted) return;
     final now = DateTime.now();
-    bool needsRepaint = false;
 
     // 1. Update Falling Balls
-    const double totalFallDurationMs = 2600.0; // Ball drop total time
+    const double totalFallDurationMs = 2600.0;
     final finishedBalls = <_ActivePlinkoBall>[];
 
     for (var ball in _activeBalls) {
@@ -212,14 +204,12 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
         ball.lastHitRow = currentRow;
         // Play bounce sound with pitch scaling
         AviatorAudioService.playPlinkoBounce(currentRow.toDouble());
-        needsRepaint = true;
       }
 
       if (progress >= 1.0 && !ball.isFinished) {
         ball.isFinished = true;
         finishedBalls.add(ball);
         _handleBallLanded(ball);
-        needsRepaint = true;
       }
     }
 
@@ -237,7 +227,6 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       } else {
         _slotHitHighlights[slot] = newVal;
       }
-      needsRepaint = true;
     });
     for (var k in keysToRemove) {
       _slotHitHighlights.remove(k);
@@ -246,7 +235,7 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
     // 3. Remove Old Floating Texts (lifespan: 1400ms)
     _floatingTexts.removeWhere((item) => now.difference(item.createdAt).inMilliseconds > 1400);
 
-    if (needsRepaint || _activeBalls.isNotEmpty || _floatingTexts.isNotEmpty) {
+    if (finishedBalls.isNotEmpty) {
       setState(() {});
     }
   }
@@ -394,30 +383,32 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
     );
   }
 
+  static final ThemeData _plinkoDarkTheme = ThemeData.dark().copyWith(
+    scaffoldBackgroundColor: const Color(0xFF070B14),
+    textSelectionTheme: const TextSelectionThemeData(
+      cursorColor: Color(0xFF2ED573),
+      selectionColor: Color(0x662ED573),
+      selectionHandleColor: Color(0xFF2ED573),
+    ),
+    inputDecorationTheme: const InputDecorationTheme(
+      filled: true,
+      fillColor: Colors.transparent,
+      border: InputBorder.none,
+      enabledBorder: InputBorder.none,
+      focusedBorder: InputBorder.none,
+      disabledBorder: InputBorder.none,
+      errorBorder: InputBorder.none,
+      contentPadding: EdgeInsets.symmetric(vertical: 8),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<AppProvider>();
     final balance = provider.wallet.totalBalance;
 
     return Theme(
-      data: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF070B14),
-        textSelectionTheme: const TextSelectionThemeData(
-          cursorColor: Color(0xFF2ED573),
-          selectionColor: Color(0x662ED573),
-          selectionHandleColor: Color(0xFF2ED573),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: false,
-          fillColor: Colors.transparent,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          errorBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          contentPadding: EdgeInsets.zero,
-        ),
-      ),
+      data: _plinkoDarkTheme,
       child: Scaffold(
         backgroundColor: const Color(0xFF070B14),
         appBar: _buildAppBar(balance),
@@ -427,7 +418,7 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               // 1. Top Recent Multipliers Bar
               _buildRecentMultipliersStrip(),
 
-              // 2. Main Plinko Board Area
+              // 2. Main Plinko Board Area (60fps Canvas Loop decoupled from UI state)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -448,20 +439,27 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: LayoutBuilder(
-                      builder: (context, constraints) {
-                        return CustomPaint(
-                          size: Size(constraints.maxWidth, constraints.maxHeight),
-                          painter: _PlinkoBoardPainter(
-                            rows: _selectedRows,
-                            multipliers: _multipliers,
-                            activeBalls: _activeBalls,
-                            slotHighlights: _slotHitHighlights,
-                            floatingTexts: _floatingTexts,
-                            riskColor: _riskConfigs[_selectedRisk]?.color ?? const Color(0xFF3867D6),
-                          ),
-                        );
-                      },
+                    child: RepaintBoundary(
+                      child: AnimatedBuilder(
+                        animation: _gameLoopController,
+                        builder: (context, _) {
+                          return LayoutBuilder(
+                            builder: (context, constraints) {
+                              return CustomPaint(
+                                size: Size(constraints.maxWidth, constraints.maxHeight),
+                                painter: _PlinkoBoardPainter(
+                                  rows: _selectedRows,
+                                  multipliers: _multipliers,
+                                  activeBalls: _activeBalls,
+                                  slotHighlights: _slotHitHighlights,
+                                  floatingTexts: _floatingTexts,
+                                  riskColor: _riskConfigs[_selectedRisk]?.color ?? const Color(0xFF3867D6),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -773,10 +771,10 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
           ),
           const SizedBox(height: 10),
 
-          // Row 2: Bet Amount Input Field & Multiplier Adjusters
+          // Row 2: Bet Amount Stepper Input & Multipliers
           Row(
             children: [
-              // Bet Amount Input Field Box (Fixed digit visibility and dark styling)
+              // Amount Input with - / + Stepper (Ultra Reliable Text Rendering)
               Expanded(
                 flex: 5,
                 child: Container(
@@ -795,64 +793,69 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF2ED573).withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          '₹',
-                          style: TextStyle(
-                            color: Color(0xFF2ED573),
-                            fontSize: 15,
+                      IconButton(
+                        icon: const Icon(Icons.remove_rounded, size: 18, color: Colors.white70),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 34, minHeight: 44),
+                        onPressed: () {
+                          final v = max(10, _betAmount - 10);
+                          setState(() {
+                            _betAmount = v;
+                            _betController.text = '$v';
+                          });
+                        },
+                      ),
+                      Expanded(
+                        child: TextField(
+                          controller: _betController,
+                          keyboardType: TextInputType.number,
+                          textAlign: TextAlign.center,
+                          cursorColor: const Color(0xFF2ED573),
+                          cursorWidth: 2,
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                            letterSpacing: 0.5,
                           ),
+                          decoration: const InputDecoration(
+                            isDense: true,
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
+                            errorBorder: InputBorder.none,
+                            prefixText: '₹',
+                            prefixStyle: TextStyle(
+                              color: Color(0xFF2ED573),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                            contentPadding: EdgeInsets.symmetric(vertical: 8),
+                          ),
+                          onChanged: (v) {
+                            final parsed = int.tryParse(v);
+                            if (parsed != null) {
+                              _betAmount = parsed;
+                            }
+                          },
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Theme(
-                          data: ThemeData.dark().copyWith(
-                            inputDecorationTheme: const InputDecorationTheme(
-                              filled: false,
-                              fillColor: Colors.transparent,
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              errorBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                            ),
-                          ),
-                          child: TextField(
-                            controller: _betController,
-                            keyboardType: TextInputType.number,
-                            cursorColor: const Color(0xFF2ED573),
-                            cursorWidth: 2,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w900,
-                              fontSize: 16,
-                              letterSpacing: 0.5,
-                            ),
-                            decoration: const InputDecoration(
-                              isDense: true,
-                              filled: false,
-                              fillColor: Colors.transparent,
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              disabledBorder: InputBorder.none,
-                              errorBorder: InputBorder.none,
-                              contentPadding: EdgeInsets.symmetric(vertical: 10),
-                              hintText: '0',
-                              hintStyle: TextStyle(color: Colors.white30, fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
+                      IconButton(
+                        icon: const Icon(Icons.add_rounded, size: 18, color: Colors.white70),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 34, minHeight: 44),
+                        onPressed: () {
+                          final v = _betAmount + 50;
+                          setState(() {
+                            _betAmount = v;
+                            _betController.text = '$v';
+                          });
+                        },
                       ),
                     ],
                   ),
@@ -864,7 +867,10 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               InkWell(
                 onTap: () {
                   final newBet = max(10, (_betAmount / 2).floor());
-                  _betController.text = newBet.toString();
+                  setState(() {
+                    _betAmount = newBet;
+                    _betController.text = newBet.toString();
+                  });
                 },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -892,7 +898,10 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               InkWell(
                 onTap: () {
                   final newBet = min(balance, _betAmount * 2);
-                  _betController.text = newBet.toString();
+                  setState(() {
+                    _betAmount = newBet;
+                    _betController.text = newBet.toString();
+                  });
                 },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -919,7 +928,11 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               // Quick MAX Button
               InkWell(
                 onTap: () {
-                  _betController.text = balance > 0 ? balance.toString() : '100';
+                  final newBet = balance > 0 ? balance : 100;
+                  setState(() {
+                    _betAmount = newBet;
+                    _betController.text = newBet.toString();
+                  });
                 },
                 borderRadius: BorderRadius.circular(10),
                 child: Container(
@@ -965,7 +978,12 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                 return Padding(
                   padding: const EdgeInsets.only(right: 6),
                   child: InkWell(
-                    onTap: () => _betController.text = amt.toString(),
+                    onTap: () {
+                      setState(() {
+                        _betAmount = amt;
+                        _betController.text = amt.toString();
+                      });
+                    },
                     borderRadius: BorderRadius.circular(8),
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 180),
