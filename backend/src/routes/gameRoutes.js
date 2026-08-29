@@ -32,6 +32,7 @@ router.post('/dice/roll', gameController.rollDice);
 router.get('/plinko/multipliers', gameController.getPlinkoMultipliers);
 router.get('/plinko/history', gameController.getPlinkoHistory);
 router.post('/plinko/drop', gameController.dropPlinko);
+router.post('/plinko/settle', gameController.settlePlinko);
 
 module.exports = router;
 

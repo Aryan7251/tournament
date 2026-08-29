@@ -241,7 +241,7 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
   }
 
   void _handleBallLanded(_ActivePlinkoBall ball) {
-    // Flash the slot
+    // Flash the hit slot
     _slotHitHighlights[ball.landingIndex] = 1.0;
 
     // Play landing audio
@@ -250,7 +250,7 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       AviatorAudioService.playWinFanfare();
     }
 
-    // Add recent multiplier to history strip
+    // Add recent multiplier to top history strip
     setState(() {
       _recentMultipliers.insert(
         0,
@@ -263,15 +263,25 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       if (_recentMultipliers.length > 25) _recentMultipliers.removeLast();
     });
 
-    // Credit winnings to wallet upon ball landing
+    // Credit winnings to wallet NOW upon ball landing on multiplier!
     final provider = context.read<AppProvider>();
     if (ball.wonAmount > 0) {
       provider.addWinnings(ball.wonAmount);
     }
-    final hasActiveBalls = _activeBalls.any((b) => !b.isFinished && b.id != ball.id);
-    if (!hasActiveBalls && ball.serverWallet != null) {
-      provider.updateWallet(ball.serverWallet!);
-    }
+
+    // Settle with server upon landing
+    ApiService.settlePlinkoBall(
+      userId: provider.user.id,
+      roundId: ball.id,
+    ).then((settleRes) {
+      if (settleRes.success && settleRes.wallet != null && mounted) {
+        final hasActiveBalls = _activeBalls.any((b) => !b.isFinished && b.id != ball.id);
+        if (!hasActiveBalls) {
+          provider.updateWallet(settleRes.wallet!);
+        }
+      }
+      _refreshHistory();
+    });
 
     // Add floating win text
     _floatingTexts.add(_FloatingWinText(
@@ -281,8 +291,6 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       position: Offset(0, 0), // painter handles bottom position
       createdAt: DateTime.now(),
     ));
-
-    _refreshHistory();
   }
 
   Future<void> _dropBall() async {

@@ -336,6 +336,22 @@ exports.dropPlinko = (req, res) => {
   }
 };
 
+// POST /api/games/plinko/settle
+exports.settlePlinko = (req, res) => {
+  try {
+    const { userId, roundId } = req.body;
+    if (!userId || !roundId) {
+      return res.status(400).json({ success: false, error: 'User ID and round ID are required' });
+    }
+
+    const result = plinkoEngine.settleBall({ userId, roundId });
+    return res.json(result);
+  } catch (error) {
+    console.error('settlePlinko error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to settle Plinko ball' });
+  }
+};
+
 // GET /api/games/plinko/history
 exports.getPlinkoHistory = (req, res) => {
   try {

@@ -33,6 +33,7 @@ const PLINKO_MULTIPLIERS = {
 
 class PlinkoEngine {
   constructor() {
+    this.pendingRounds = new Map();
     this.history = [
       { id: 'pk_seed_1', rows: 8, risk: 'medium', landingIndex: 7, multiplier: 3.0, wonAmount: 150, time: new Date().toISOString() },
       { id: 'pk_seed_2', rows: 12, risk: 'high', landingIndex: 1, multiplier: 24.0, wonAmount: 1200, time: new Date().toISOString() },
@@ -65,7 +66,7 @@ class PlinkoEngine {
         newDeposit -= rem;
         rem = 0;
       } else {
-        rem -= newDeposit;
+        newDeposit -= rem;
         newDeposit = 0;
         newWinning = Math.max(0, newWinning - rem);
       }
@@ -111,6 +112,7 @@ class PlinkoEngine {
       return { success: false, error: 'User not found' };
     }
 
+    // 1. Deduct bet amount immediately from user wallet
     const updatedWallet = this._deductUserBalance(userId, numAmount);
     if (!updatedWallet) {
       const w = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
@@ -136,8 +138,6 @@ class PlinkoEngine {
     const wonAmount = Math.round(numAmount * multiplier);
     const now = new Date().toISOString();
 
-    let finalWallet = updatedWallet;
-
     // Record entry fee transaction
     try {
       db.prepare(`
@@ -159,61 +159,31 @@ class PlinkoEngine {
       console.error('[PlinkoEngine] DB txn error:', e);
     }
 
-    // If won > 0, credit winning balance and record win
-    if (wonAmount > 0) {
-      finalWallet = this._creditUserWinnings(userId, wonAmount);
-
-      try {
-        db.prepare(`
-          INSERT INTO transactions (
-            id, user_id, type, amount, status, title, description, timestamp, reference_id
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).run(
-          `TXN_PLINKO_WIN_${roundId}`,
-          userId,
-          'prize_won',
-          wonAmount,
-          'completed',
-          `Plinko Win @ ${multiplier}x`,
-          `Landed on Slot ${landingIndex + 1}/${rowCount + 1} (${multiplier}x) - Won ₹${wonAmount}`,
-          now,
-          roundId
-        );
-
-        if (multiplier >= 5.0) {
-          db.prepare(`
-            INSERT INTO notifications (id, user_id, title, message, type, timestamp, read)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-          `).run(
-            `notif_plinko_${Date.now()}`,
-            userId,
-            'Plinko Mega Multiplier! ⚡',
-            `Your ball landed on ${multiplier}x! You won ₹${wonAmount}!`,
-            'win',
-            now,
-            0
-          );
-        }
-      } catch (e) {
-        console.error('[PlinkoEngine] DB win record error:', e);
-      }
-    }
-
-    // Add to history
-    this.history.unshift({
-      id: roundId,
+    // Store round in pending map awaiting ball landing
+    this.pendingRounds.set(roundId, {
+      roundId,
+      userId,
+      amount: numAmount,
       rows: rowCount,
       risk: riskLevel,
+      path,
       landingIndex,
       multiplier,
       wonAmount,
-      time: now
+      settled: false,
+      createdAt: Date.now()
     });
-    if (this.history.length > 30) this.history.pop();
+
+    // Auto-settle safety timeout (12s) if client fails to call settle
+    setTimeout(() => {
+      if (this.pendingRounds.has(roundId)) {
+        this.settleBall({ userId, roundId });
+      }
+    }, 12000);
 
     return {
       success: true,
-      message: wonAmount > 0 ? `Landed on ${multiplier}x! Won ₹${wonAmount}` : `Landed on ${multiplier}x`,
+      message: 'Ball dropped',
       roundId,
       rows: rowCount,
       risk: riskLevel,
@@ -224,7 +194,90 @@ class PlinkoEngine {
       isWin: wonAmount > 0,
       serverSeed,
       hash,
-      wallet: formatWallet(finalWallet)
+      wallet: formatWallet(updatedWallet) // Returns wallet after bet deduction ONLY!
+    };
+  }
+
+  settleBall({ userId, roundId }) {
+    const round = this.pendingRounds.get(roundId);
+    let finalWallet = null;
+    const now = new Date().toISOString();
+
+    if (round && !round.settled) {
+      round.settled = true;
+
+      // Credit user winnings if wonAmount > 0
+      if (round.wonAmount > 0) {
+        finalWallet = this._creditUserWinnings(userId, round.wonAmount);
+
+        try {
+          db.prepare(`
+            INSERT INTO transactions (
+              id, user_id, type, amount, status, title, description, timestamp, reference_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).run(
+            `TXN_PLINKO_WIN_${roundId}`,
+            userId,
+            'prize_won',
+            round.wonAmount,
+            'completed',
+            `Plinko Win @ ${round.multiplier}x`,
+            `Landed on Slot ${round.landingIndex + 1}/${round.rows + 1} (${round.multiplier}x) - Won ₹${round.wonAmount}`,
+            now,
+            roundId
+          );
+
+          if (round.multiplier >= 5.0) {
+            db.prepare(`
+              INSERT INTO notifications (id, user_id, title, message, type, timestamp, read)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+            `).run(
+              `notif_plinko_${Date.now()}`,
+              userId,
+              'Plinko Mega Multiplier! ⚡',
+              `Your ball landed on ${round.multiplier}x! You won ₹${round.wonAmount}!`,
+              'win',
+              now,
+              0
+            );
+          }
+        } catch (e) {
+          console.error('[PlinkoEngine] DB win record error:', e);
+        }
+      } else {
+        const w = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
+        if (w) finalWallet = w;
+      }
+
+      // Add to history
+      this.history.unshift({
+        id: roundId,
+        rows: round.rows,
+        risk: round.risk,
+        landingIndex: round.landingIndex,
+        multiplier: round.multiplier,
+        wonAmount: round.wonAmount,
+        time: now
+      });
+      if (this.history.length > 30) this.history.pop();
+
+      this.pendingRounds.delete(roundId);
+
+      return {
+        success: true,
+        message: round.wonAmount > 0 ? `Landed on ${round.multiplier}x! Won ₹${round.wonAmount}` : `Landed on ${round.multiplier}x`,
+        roundId,
+        multiplier: round.multiplier,
+        wonAmount: round.wonAmount,
+        wallet: finalWallet ? formatWallet(finalWallet) : null
+      };
+    }
+
+    const currentWallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
+    return {
+      success: true,
+      roundId,
+      wallet: currentWallet ? formatWallet(currentWallet) : null
     };
   }
 

@@ -1410,6 +1410,55 @@ class ApiService {
     }
   }
 
+  /// Settle Plinko Ball upon landing on multiplier slot
+  static Future<({
+    bool success,
+    String message,
+    Wallet? wallet,
+    int wonAmount,
+    double multiplier,
+  })> settlePlinkoBall({
+    required String userId,
+    required String roundId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/plinko/settle'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'roundId': roundId,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        return (
+          success: true,
+          message: body['message'] as String? ?? 'Ball settled',
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+          wonAmount: (body['wonAmount'] as num?)?.toInt() ?? 0,
+          multiplier: (body['multiplier'] as num?)?.toDouble() ?? 1.0,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to settle ball',
+          wallet: null,
+          wonAmount: 0,
+          multiplier: 1.0,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        wallet: null,
+        wonAmount: 0,
+        multiplier: 1.0,
+      );
+    }
+  }
+
   /// Get Plinko Drop History
   static Future<List<dynamic>> getPlinkoHistory() async {
     try {
