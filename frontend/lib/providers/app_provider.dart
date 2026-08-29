@@ -1047,4 +1047,10 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
     await syncWithDatabase();
   }
+
+  @override
+  void dispose() {
+    _liveSyncTimer?.cancel();
+    super.dispose();
+  }
 }

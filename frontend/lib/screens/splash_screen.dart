@@ -26,6 +26,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
   late Animation<double> _fadeAnimation;
 
   String _loadingStatus = 'Connecting to Secure Server...';
+  Timer? _statusTimer;
   final List<String> _statusSteps = [
     'Initializing Game Engine...',
     'Synchronizing Tournaments & Aviator...',
@@ -83,7 +84,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   void _startStatusSequence() {
     int step = 0;
-    Timer.periodic(const Duration(milliseconds: 450), (timer) {
+    _statusTimer = Timer.periodic(const Duration(milliseconds: 450), (timer) {
       if (!mounted) {
         timer.cancel();
         return;
@@ -124,6 +125,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
 
   @override
   void dispose() {
+    _statusTimer?.cancel();
     _pulseController.dispose();
     _rotateController.dispose();
     _progressController.dispose();

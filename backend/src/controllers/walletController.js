@@ -182,7 +182,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
     const { userId } = req.params;
     const { razorpay_payment_id, razorpay_order_id, razorpay_signature, amount } = req.body;
 
-    const { keySecret, isConfigured } = getRazorpayInstance();
+    const { instance, keySecret, isConfigured } = getRazorpayInstance();
     if (!isConfigured || !keySecret) {
       return res.status(400).json({
         success: false,
@@ -190,16 +190,11 @@ exports.verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    const numAmount = parseInt(amount, 10);
-    if (isNaN(numAmount) || numAmount <= 0) {
-      return res.status(400).json({ success: false, error: 'Invalid deposit amount' });
-    }
-
     if (!razorpay_payment_id || !razorpay_order_id || !razorpay_signature) {
       return res.status(400).json({ success: false, error: 'Payment ID, Order ID and Signature are required' });
     }
 
-    // Check for duplicate transaction
+    // Check for duplicate transaction (idempotency)
     const existingTxn = db.prepare('SELECT id FROM transactions WHERE reference_id = ?').get(razorpay_payment_id);
     if (existingTxn) {
       const currentWallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
@@ -210,17 +205,46 @@ exports.verifyRazorpayPayment = async (req, res) => {
       });
     }
 
-    // Verify HMAC-SHA256 signature
+    // Verify HMAC-SHA256 signature using timing-safe comparison
     const generatedSignature = crypto
       .createHmac('sha256', keySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    if (generatedSignature !== razorpay_signature) {
+    const sigBufferA = Buffer.from(generatedSignature, 'utf8');
+    const sigBufferB = Buffer.from(String(razorpay_signature), 'utf8');
+
+    if (sigBufferA.length !== sigBufferB.length || !crypto.timingSafeEqual(sigBufferA, sigBufferB)) {
       return res.status(400).json({
         success: false,
         error: 'Razorpay payment signature verification failed. Untrusted transaction.'
       });
+    }
+
+    // Authoritatively verify amount and user from server-side order
+    let verifiedAmount = parseInt(amount, 10);
+    if (instance) {
+      try {
+        const orderData = await instance.orders.fetch(razorpay_order_id);
+        if (orderData && orderData.amount) {
+          const serverAmount = Math.floor(orderData.amount / 100);
+          if (serverAmount > 0) {
+            verifiedAmount = serverAmount;
+          }
+          if (orderData.notes && orderData.notes.userId && orderData.notes.userId !== userId) {
+            return res.status(403).json({
+              success: false,
+              error: 'Order ownership mismatch. Transaction rejected.'
+            });
+          }
+        }
+      } catch (orderErr) {
+        console.warn('[Razorpay] Order fetch notice:', orderErr.message);
+      }
+    }
+
+    if (isNaN(verifiedAmount) || verifiedAmount <= 0) {
+      return res.status(400).json({ success: false, error: 'Invalid deposit amount' });
     }
 
     // Ensure wallet exists
@@ -235,7 +259,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
       wallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
     }
 
-    const newDeposit = wallet.deposit_balance + numAmount;
+    const newDeposit = wallet.deposit_balance + verifiedAmount;
 
     db.prepare(`
       UPDATE wallets
@@ -254,7 +278,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
       txnId,
       userId,
       'deposit',
-      numAmount,
+      verifiedAmount,
       'completed',
       'Added Cash to Wallet',
       `Payment via Razorpay (${razorpay_payment_id})`,
@@ -273,7 +297,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
       `notif_${Date.now()}`,
       userId,
       'Razorpay Deposit Successful! 💳',
-      `₹${numAmount} deposited into your wallet via Razorpay. Payment ID: ${razorpay_payment_id}`,
+      `₹${verifiedAmount} deposited into your wallet via Razorpay. Payment ID: ${razorpay_payment_id}`,
       'success',
       now,
       0
@@ -283,7 +307,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
 
     return res.json({
       success: true,
-      message: `₹${numAmount} successfully added to wallet via Razorpay`,
+      message: `₹${verifiedAmount} successfully added to wallet via Razorpay`,
       data: formatWallet(updatedWallet),
       paymentId: razorpay_payment_id
     });
@@ -299,14 +323,21 @@ exports.razorpayWebhook = async (req, res) => {
     const webhookSecret = getSetting('razorpay_webhook_secret', '');
     const signature = req.headers['x-razorpay-signature'];
 
-    if (webhookSecret && signature) {
+    if (webhookSecret) {
+      if (!signature) {
+        return res.status(400).json({ success: false, error: 'Missing webhook signature header' });
+      }
+
       const payload = JSON.stringify(req.body);
       const expectedSignature = crypto
         .createHmac('sha256', webhookSecret)
         .update(payload)
         .digest('hex');
 
-      if (expectedSignature !== signature) {
+      const sigA = Buffer.from(expectedSignature, 'utf8');
+      const sigB = Buffer.from(String(signature), 'utf8');
+
+      if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) {
         return res.status(400).json({ success: false, error: 'Invalid webhook signature' });
       }
     }
@@ -319,20 +350,22 @@ exports.razorpayWebhook = async (req, res) => {
         const paymentId = payment.id;
         const amount = Math.floor(payment.amount / 100);
 
-        const existing = db.prepare('SELECT id FROM transactions WHERE reference_id = ?').get(paymentId);
-        if (!existing) {
-          const now = new Date().toISOString();
-          let wallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
-          if (!wallet) {
-            db.prepare('INSERT INTO wallets (user_id, deposit_balance, winning_balance, bonus_balance, updated_at) VALUES (?, 0, 0, 0, ?)').run(userId, now);
-            wallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
-          }
+        if (amount > 0) {
+          const existing = db.prepare('SELECT id FROM transactions WHERE reference_id = ?').get(paymentId);
+          if (!existing) {
+            const now = new Date().toISOString();
+            let wallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
+            if (!wallet) {
+              db.prepare('INSERT INTO wallets (user_id, deposit_balance, winning_balance, bonus_balance, updated_at) VALUES (?, 0, 0, 0, ?)').run(userId, now);
+              wallet = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
+            }
 
-          db.prepare('UPDATE wallets SET deposit_balance = deposit_balance + ?, updated_at = ? WHERE user_id = ?').run(amount, now, userId);
-          db.prepare(`
-            INSERT INTO transactions (id, user_id, type, amount, status, title, description, timestamp, reference_id, payment_method)
-            VALUES (?, ?, 'deposit', ?, 'completed', 'Razorpay Auto-Credit (Webhook)', ?, ?, ?, 'Razorpay')
-          `).run(`TXN_RZP_WH_${Date.now()}`, userId, amount, `Webhook capture for ${paymentId}`, now, paymentId);
+            db.prepare('UPDATE wallets SET deposit_balance = deposit_balance + ?, updated_at = ? WHERE user_id = ?').run(amount, now, userId);
+            db.prepare(`
+              INSERT INTO transactions (id, user_id, type, amount, status, title, description, timestamp, reference_id, payment_method)
+              VALUES (?, ?, 'deposit', ?, 'completed', 'Razorpay Auto-Credit (Webhook)', ?, ?, ?, 'Razorpay')
+            `).run(`TXN_RZP_WH_${Date.now()}`, userId, amount, `Webhook capture for ${paymentId}`, now, paymentId);
+          }
         }
       }
     }

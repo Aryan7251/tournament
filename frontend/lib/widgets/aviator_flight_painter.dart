@@ -179,7 +179,6 @@ class AviatorFlightPainter extends CustomPainter {
     }
 
     // Fuselage (Red Aerodynamic Body)
-    final bodyPaint = Paint()..color = const Color(0xFFE51D35);
     final bodyPath = Path()
       ..moveTo(22, 0)
       ..quadraticBezierTo(24, 2, 26, 3) // Nose cone
@@ -188,51 +187,44 @@ class AviatorFlightPainter extends CustomPainter {
       ..lineTo(-18, -4)
       ..quadraticBezierTo(8, -5, 22, 0)
       ..close();
-    canvas.drawPath(bodyPath, bodyPaint);
+    canvas.drawPath(bodyPath, _bodyPaint);
 
     // Canopy / Cockpit glass
-    final cockpitPaint = Paint()..color = const Color(0xFF70A1FF).withValues(alpha: 0.85);
     final cockpitPath = Path()
       ..moveTo(6, -4)
       ..quadraticBezierTo(14, -4, 16, -1)
       ..lineTo(4, -1)
       ..close();
-    canvas.drawPath(cockpitPath, cockpitPaint);
+    canvas.drawPath(cockpitPath, _cockpitPaint);
 
     // Main Wings (Red with highlight)
-    final wingPaint = Paint()..color = const Color(0xFFC0152B);
     final wingPath = Path()
       ..moveTo(4, -2)
       ..lineTo(-6, -18)
       ..lineTo(-12, -18)
       ..lineTo(-4, 0)
       ..close();
-    canvas.drawPath(wingPath, wingPaint);
+    canvas.drawPath(wingPath, _wingPaint);
 
     // Tail Wing
-    final tailPaint = Paint()..color = const Color(0xFF990E1F);
     final tailPath = Path()
       ..moveTo(-16, -2)
       ..lineTo(-22, -12)
       ..lineTo(-26, -12)
       ..lineTo(-22, 0)
       ..close();
-    canvas.drawPath(tailPath, tailPaint);
+    canvas.drawPath(tailPath, _tailPaint);
 
     // Spinning Propeller at front nose
     final propAngle = timeSec * 50;
-    final propPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.75)
-      ..strokeWidth = 2.0;
     canvas.drawLine(
       Offset(26 + cos(propAngle) * 8, 3 + sin(propAngle) * 8),
       Offset(26 - cos(propAngle) * 8, 3 - sin(propAngle) * 8),
-      propPaint,
+      _propPaint,
     );
 
     // Front Nose Cap
-    final nosePaint = Paint()..color = const Color(0xFFFFD32A);
-    canvas.drawCircle(const Offset(26, 3), 2.5, nosePaint);
+    canvas.drawCircle(const Offset(26, 3), 2.5, _nosePaint);
 
     canvas.restore();
   }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournament_frontend/main.dart';
 
@@ -10,5 +11,9 @@ void main() {
     // Verify that the title brand appears
     expect(find.text('LUCKY'), findsOneWidget);
     expect(find.text('WIN'), findsOneWidget);
+
+    // Teardown widget tree to trigger dispose and cancel active timers
+    await tester.pumpWidget(const SizedBox());
+    await tester.pump();
   });
 }

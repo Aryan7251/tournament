@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../models/transaction.dart';
 import '../providers/app_provider.dart';
@@ -674,7 +673,6 @@ class _RazorpayPaymentModalState extends State<RazorpayPaymentModal> {
   String? _errorMessage;
 
   String? _orderId;
-  String? _keyId;
 
   final TextEditingController _upiVpaController = TextEditingController();
   final TextEditingController _cardNumController = TextEditingController();
@@ -740,7 +738,6 @@ class _RazorpayPaymentModalState extends State<RazorpayPaymentModal> {
         _isLoadingOrder = false;
         if (res.success && res.orderId != null && res.isConfigured) {
           _orderId = res.orderId;
-          _keyId = res.keyId;
           _isConfigured = true;
         } else {
           _isConfigured = false;
