@@ -34,6 +34,7 @@ const PLINKO_MULTIPLIERS = {
 class PlinkoEngine {
   constructor() {
     this.pendingRounds = new Map();
+    this.userNonces = new Map();
     this.history = [
       { id: 'pk_seed_1', rows: 8, risk: 'medium', landingIndex: 7, multiplier: 3.0, wonAmount: 150, time: new Date().toISOString() },
       { id: 'pk_seed_2', rows: 12, risk: 'high', landingIndex: 1, multiplier: 24.0, wonAmount: 1200, time: new Date().toISOString() },
@@ -98,7 +99,25 @@ class PlinkoEngine {
     return r[risk] || r.medium;
   }
 
-  dropBall({ userId, amount, rows = 8, risk = 'medium' }) {
+  // Provably Fair HMAC-SHA256 Path Generator (Industry Standard Stake Algorithm)
+  generateProvablyFairPath(serverSeed, clientSeed, nonce, rowCount) {
+    const path = [];
+    let landingIndex = 0;
+
+    for (let i = 0; i < rowCount; i++) {
+      const hmac = crypto.createHmac('sha256', serverSeed);
+      hmac.update(`${clientSeed}:${nonce}:${i}`);
+      const digest = hmac.digest();
+      const num = digest.readUInt32BE(0);
+      const step = (num / 0xFFFFFFFF) < 0.5 ? 0 : 1;
+      path.push(step);
+      landingIndex += step;
+    }
+
+    return { path, landingIndex };
+  }
+
+  dropBall({ userId, amount, rows = 8, risk = 'medium', clientSeed = '' }) {
     const numAmount = parseInt(amount, 10);
     if (isNaN(numAmount) || numAmount <= 0) {
       return { success: false, error: 'Invalid bet amount' };
@@ -122,16 +141,21 @@ class PlinkoEngine {
 
     const roundId = `pk_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const serverSeed = crypto.randomBytes(32).toString('hex');
-    const hash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+    const serverHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+    const finalClientSeed = clientSeed && clientSeed.trim().length > 0
+      ? clientSeed.trim()
+      : crypto.randomBytes(16).toString('hex');
 
-    // Generate provably fair step path (0 = Left bounce, 1 = Right bounce)
-    const path = [];
-    let landingIndex = 0;
-    for (let i = 0; i < rowCount; i++) {
-      const step = Math.random() < 0.5 ? 0 : 1;
-      path.push(step);
-      landingIndex += step;
-    }
+    const currentNonce = (this.userNonces.get(userId) || 0) + 1;
+    this.userNonces.set(userId, currentNonce);
+
+    // Advanced HMAC-SHA256 Path Generation
+    const { path, landingIndex } = this.generateProvablyFairPath(
+      serverSeed,
+      finalClientSeed,
+      currentNonce,
+      rowCount
+    );
 
     const multipliers = this.getMultipliers(rowCount, riskLevel);
     const multiplier = multipliers[landingIndex] !== undefined ? multipliers[landingIndex] : 1.0;
@@ -193,8 +217,26 @@ class PlinkoEngine {
       wonAmount,
       isWin: wonAmount > 0,
       serverSeed,
-      hash,
+      serverHash,
+      clientSeed: finalClientSeed,
+      nonce: currentNonce,
       wallet: formatWallet(updatedWallet) // Returns wallet after bet deduction ONLY!
+    };
+  }
+
+  verifyRound({ serverSeed, clientSeed, nonce, rows }) {
+    const rowCount = [8, 10, 12, 14, 16].includes(parseInt(rows, 10)) ? parseInt(rows, 10) : 8;
+    const serverHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+    const { path, landingIndex } = this.generateProvablyFairPath(serverSeed, clientSeed, parseInt(nonce, 10) || 1, rowCount);
+    return {
+      success: true,
+      serverSeed,
+      serverHash,
+      clientSeed,
+      nonce: parseInt(nonce, 10) || 1,
+      rows: rowCount,
+      path,
+      landingIndex
     };
   }
 

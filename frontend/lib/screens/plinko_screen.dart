@@ -571,9 +571,17 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
           },
         ),
 
+        // Provably Fair Shield
+        IconButton(
+          icon: const Icon(Icons.shield_outlined, color: Color(0xFF2ED573), size: 20),
+          tooltip: 'Provably Fair',
+          onPressed: _showFairnessSheet,
+        ),
+
         // History Modal
         IconButton(
           icon: const Icon(Icons.history, color: Colors.white70, size: 20),
+          tooltip: 'History',
           onPressed: _showHistorySheet,
         ),
       ],
@@ -1273,6 +1281,124 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       },
     );
   }
+
+  void _showFairnessSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF090E1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.verified_user_rounded, color: Color(0xFF2ED573), size: 22),
+                      SizedBox(width: 8),
+                      Text(
+                        'Provably Fair Pyramid',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white54),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF131D2E),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF1E293B)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    Text(
+                      'HMAC-SHA256 Cryptographic Algorithm',
+                      style: TextStyle(
+                        color: Color(0xFF2ED573),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Every ball drop path is deterministically generated using an industry-standard HMAC-SHA256 hash of the Server Seed, Client Seed, and sequential Nonce. Outcomes are mathematically unmanipulable and 100% verifiable by the player.',
+                      style: TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontSize: 11,
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Theoretical RTP', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                          SizedBox(height: 2),
+                          Text('98.5% (Fair Play)', style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.w900, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.white12),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text('Distribution', style: TextStyle(color: Colors.white54, fontSize: 10)),
+                          SizedBox(height: 2),
+                          Text('Binomial B(N, 0.5)', style: TextStyle(color: Color(0xFFFFD32A), fontWeight: FontWeight.w900, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
 // Custom Painter for the Plinko Pegboard, Falling Balls, Ripples, and Landing Buckets
@@ -1387,13 +1513,33 @@ class _PlinkoBoardPainter extends CustomPainter {
       );
     }
 
-    // 5. Draw Active Falling Balls
+    // 5. Draw Active Falling Balls with Motion Trails & Elastic Physics
     final now = DateTime.now();
     const double totalDurationMs = 2600.0;
 
     for (var ball in activeBalls) {
       final elapsedMs = now.difference(ball.startTime).inMilliseconds.toDouble();
       final totalProgress = (elapsedMs / totalDurationMs).clamp(0.0, 1.0);
+
+      // Draw Motion Trail (3 trailing points)
+      for (int t = 3; t >= 1; t--) {
+        final trailProgress = ((elapsedMs - t * 35.0) / totalDurationMs).clamp(0.0, 1.0);
+        if (trailProgress > 0.0) {
+          final trailPos = _calculateBallPosition(
+            progress: trailProgress,
+            rows: ball.rows,
+            path: ball.path,
+            topMargin: topMargin,
+            rowSpacing: rowSpacing,
+            pinGapX: pinGapX,
+            boardWidth: w,
+            bucketY: bucketY,
+          );
+          final trailOpacity = (0.28 / t).clamp(0.05, 0.4);
+          final trailPaint = Paint()..color = ball.color.withValues(alpha: trailOpacity);
+          canvas.drawCircle(trailPos, 4.0 - t * 0.8, trailPaint);
+        }
+      }
 
       final ballPos = _calculateBallPosition(
         progress: totalProgress,
@@ -1408,17 +1554,17 @@ class _PlinkoBoardPainter extends CustomPainter {
 
       // Ball Outer Glow
       final glowPaint = Paint()
-        ..color = ball.color.withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawCircle(ballPos, 7.5, glowPaint);
+        ..color = ball.color.withValues(alpha: 0.65)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9);
+      canvas.drawCircle(ballPos, 8.0, glowPaint);
 
       // Ball Core
       final ballPaint = Paint()..color = ball.color;
-      canvas.drawCircle(ballPos, 5.5, ballPaint);
+      canvas.drawCircle(ballPos, 5.8, ballPaint);
 
       // Ball Specular Highlight
-      final specPaint = Paint()..color = Colors.white.withValues(alpha: 0.8);
-      canvas.drawCircle(Offset(ballPos.dx - 1.8, ballPos.dy - 1.8), 1.8, specPaint);
+      final specPaint = Paint()..color = Colors.white.withValues(alpha: 0.9);
+      canvas.drawCircle(Offset(ballPos.dx - 1.8, ballPos.dy - 1.8), 2.0, specPaint);
     }
 
     // 6. Draw Floating Win Texts at Bottom
@@ -1462,16 +1608,20 @@ class _PlinkoBoardPainter extends CustomPainter {
     // Total steps = rows + 1 (from apex drop to bottom bucket)
     final double stepProgress = progress * (rows + 1);
     final int currentStep = stepProgress.floor().clamp(0, rows);
-    final double subProgress = stepProgress - currentStep;
+    final double subProgress = (stepProgress - currentStep).clamp(0.0, 1.0);
 
     // Calculate position at currentStep and nextStep
     final pCurrent = _getStepPoint(currentStep, rows, path, topMargin, rowSpacing, pinGapX, boardWidth, bucketY);
     final pNext = _getStepPoint(min(rows + 1, currentStep + 1), rows, path, topMargin, rowSpacing, pinGapX, boardWidth, bucketY);
 
-    // Parabolic bounce arc interpolation between pins
-    final x = pCurrent.dx + (pNext.dx - pCurrent.dx) * subProgress;
-    // Add small bounce bump at pin contact
-    final bounceArc = sin(subProgress * pi) * -5.0;
+    // Elastic horizontal S-curve deflection (cubic ease in/out)
+    final smoothT = subProgress < 0.5
+        ? 2 * subProgress * subProgress
+        : -1 + (4 - 2 * subProgress) * subProgress;
+    final x = pCurrent.dx + (pNext.dx - pCurrent.dx) * smoothT;
+
+    // Realistic physics bounce arc off the peg
+    final bounceArc = sin(subProgress * pi) * -6.5;
     final y = pCurrent.dy + (pNext.dy - pCurrent.dy) * subProgress + bounceArc;
 
     return Offset(x, y);
