@@ -9,12 +9,15 @@ import '../models/withdrawal_request.dart';
 import '../models/notification_item.dart';
 
 class ApiService {
+  static const String prodBackendUrl =
+      'https://tournament-backend-idtb.onrender.com/api';
+
   static const String _configuredBackendUrl = String.fromEnvironment(
     'BACKEND_URL',
     defaultValue: '',
   );
 
-  // Base URL for API (supports Web on any device/IP, Render cloud, Mobile, Emulators, and Desktop)
+  // Base URL for API (supports Web on Render, custom URLs, Localhost, Mobile, Emulators)
   static String get baseUrl {
     if (_configuredBackendUrl.isNotEmpty) {
       return _configuredBackendUrl.endsWith('/api')
@@ -23,22 +26,16 @@ class ApiService {
     }
     if (kIsWeb) {
       final host = Uri.base.host.isNotEmpty ? Uri.base.host : 'localhost';
-      if (host.contains('onrender.com')) {
-        final backendHost = host.replaceAll('frontend', 'backend');
-        return 'https://$backendHost/api';
+      if (host == 'localhost' || host == '127.0.0.1') {
+        return 'http://$host:5050/api';
       }
-      final scheme = Uri.base.scheme.isNotEmpty ? Uri.base.scheme : 'http';
-      final port = Uri.base.port;
-      if (port == 80 || port == 443 || port == 0) {
-        return '$scheme://$host/api';
-      }
-      return 'http://$host:5050/api';
+      return prodBackendUrl;
     }
     // For android emulator, 10.0.2.2 points to host machine; for real devices, LAN IP
     if (defaultTargetPlatform == TargetPlatform.android) {
       return 'http://172.20.10.4:5050/api';
     }
-    return 'http://localhost:5050/api';
+    return prodBackendUrl;
   }
 
   static final Map<String, String> _headers = {

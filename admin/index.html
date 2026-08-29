@@ -79,6 +79,14 @@
           <button type="button" onclick="document.getElementById('login-username').value='admin'; document.getElementById('login-password').value='admin';" class="text-brand-400 underline font-bold hover:text-white">Auto-fill</button>
         </div>
 
+        <div class="p-2.5 bg-dark-900/80 border border-dark-700 rounded-xl text-xs flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span id="login-api-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="login-api-status" class="text-gray-300 font-mono text-[11px]">Backend API Online</span>
+          </div>
+          <button type="button" onclick="openApiConfigModal()" class="text-brand-400 hover:text-brand-300 font-bold text-[11px] underline">Change URL</button>
+        </div>
+
         <button type="submit" id="login-btn" class="w-full py-3 px-4 bg-gradient-to-r from-brand-600 to-emerald-500 hover:from-brand-500 hover:to-emerald-400 text-white font-bold rounded-xl shadow-lg shadow-brand-500/25 transition duration-200 flex items-center justify-center gap-2">
           <span>Enter Admin Control Center</span>
           <i data-lucide="arrow-right" class="w-4 h-4"></i>
@@ -170,10 +178,11 @@
       <header class="h-16 border-b border-dark-700 bg-dark-800/80 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-30">
         <div class="flex items-center gap-3">
           <h2 id="section-title" class="text-base font-extrabold text-white">Dashboard Overview</h2>
-          <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-            <span>API Server 5050 Connected</span>
-          </div>
+          <button type="button" onclick="openApiConfigModal()" id="api-status-badge" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-bold hover:bg-emerald-500/20 transition cursor-pointer" title="Click to view or edit Backend API URL">
+            <span id="api-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="api-status-text">Backend Online</span>
+            <i data-lucide="settings-2" class="w-3 h-3 ml-0.5 text-gray-400"></i>
+          </button>
         </div>
 
         <div class="flex items-center gap-3">
@@ -181,9 +190,9 @@
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
             <span>Refresh</span>
           </button>
-          <a href="http://localhost:3000" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600/20 hover:bg-brand-600/30 text-brand-400 border border-brand-500/30 text-xs font-bold transition">
+          <a href="https://tournament-frontend-69o4.onrender.com" target="_blank" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-brand-600/20 hover:bg-brand-600/30 text-brand-400 border border-brand-500/30 text-xs font-bold transition">
             <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-            <span>Open User App (3000)</span>
+            <span>Open User App</span>
           </a>
         </div>
       </header>
@@ -984,6 +993,58 @@
         </button>
         <button onclick="submitKycDecision('verified')" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition">
           Approve KYC ✅
+        </button>
+      </div>
+    </div>
+  <!-- Modal: Backend API Connection Settings -->
+  <div id="modal-api-config" class="fixed inset-0 z-50 hidden bg-dark-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="w-full max-w-lg bg-dark-800 border border-dark-700 rounded-3xl p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-brand-600/20 text-brand-400 flex items-center justify-center font-bold">
+            <i data-lucide="server" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-white">Backend API Connection</h3>
+            <p class="text-[11px] text-gray-400">Configure or verify your backend server endpoint</p>
+          </div>
+        </div>
+        <button onclick="closeModal('modal-api-config')" class="text-gray-400 hover:text-white p-1 rounded-lg"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-gray-300 mb-1.5 uppercase tracking-wider">Backend API Base URL</label>
+          <div class="relative">
+            <input type="text" id="api-config-input" placeholder="http://localhost:5050/api" class="w-full bg-dark-900 border border-dark-600 rounded-xl py-2.5 pl-3.5 pr-24 text-xs font-mono text-white focus:outline-none focus:border-brand-500">
+            <button type="button" onclick="testApiEndpoint()" id="btn-test-api" class="absolute right-1.5 top-1.5 px-3 py-1.5 bg-dark-700 hover:bg-dark-600 border border-dark-600 rounded-lg text-xs font-bold text-gray-200 transition">
+              Test
+            </button>
+          </div>
+        </div>
+
+        <div id="api-test-result" class="p-3 bg-dark-900 border border-dark-700 rounded-xl text-xs space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-gray-400 font-bold">Status:</span>
+            <span id="api-test-status" class="font-bold text-gray-300">Not Tested</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-gray-400">Database:</span>
+            <span id="api-test-db" class="text-gray-300 font-mono">-</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-gray-400">Ping:</span>
+            <span id="api-test-ping" class="text-gray-300 font-mono">-</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex gap-2 pt-2 border-t border-dark-700">
+        <button type="button" onclick="resetApiToDefault()" class="px-4 py-2.5 bg-dark-700 hover:bg-dark-600 text-gray-300 font-bold rounded-xl text-xs transition">
+          Reset Default
+        </button>
+        <button type="button" onclick="saveApiEndpoint()" class="flex-1 py-2.5 bg-brand-600 hover:bg-brand-500 text-white font-bold rounded-xl text-xs transition shadow-lg shadow-brand-600/30">
+          Save & Reconnect
         </button>
       </div>
     </div>

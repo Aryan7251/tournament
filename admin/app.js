@@ -1,20 +1,20 @@
+const PROD_BACKEND_URL = 'https://tournament-backend-idtb.onrender.com/api';
+
 const getApiBase = () => {
   if (window.API_BASE) return window.API_BASE;
   const stored = localStorage.getItem('lw_admin_api_base');
   if (stored) return stored;
   const hostname = window.location.hostname || 'localhost';
-  if (hostname === 'localhost' || hostname === '127.0.0.1' || window.location.port) {
+  if (hostname === 'localhost' || hostname === '127.0.0.1') {
     return `${window.location.protocol}//${hostname}:5050/api`;
   }
-  if (hostname.includes('onrender.com')) {
-    return `https://${hostname.replace('admin', 'backend')}/api`;
-  }
-  return `${window.location.origin}/api`;
+  return PROD_BACKEND_URL;
 };
-const API_BASE = getApiBase();
+let API_BASE = getApiBase();
 
 let currentTab = 'overview';
 let aviatorPollTimer = null;
+let healthCheckTimer = null;
 let allUsersData = [];
 let allDepositsData = [];
 let cashFlowChartInstance = null;
@@ -30,10 +30,107 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   showAppShell();
 
+  // Check live API health
+  checkApiHealth();
+  if (healthCheckTimer) clearInterval(healthCheckTimer);
+  healthCheckTimer = setInterval(checkApiHealth, 8000);
+
   // Setup login handler
   const loginForm = document.getElementById('login-form');
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
 });
+
+// Live Health & Connectivity
+async function checkApiHealth() {
+  const badgeDot = document.getElementById('api-status-dot');
+  const badgeText = document.getElementById('api-status-text');
+  const loginDot = document.getElementById('login-api-dot');
+  const loginStatus = document.getElementById('login-api-status');
+
+  try {
+    const res = await fetch(`${API_BASE}/health`, { method: 'GET' });
+    if (res.ok) {
+      if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-emerald-400 animate-pulse';
+      if (badgeText) badgeText.textContent = `Backend Online`;
+      if (loginDot) loginDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+      if (loginStatus) loginStatus.textContent = `API Online (${API_BASE})`;
+      return true;
+    }
+  } catch (e) {
+    if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-rose-500 animate-bounce';
+    if (badgeText) badgeText.textContent = `Backend Offline`;
+    if (loginDot) loginDot.className = 'w-2 h-2 rounded-full bg-rose-500';
+    if (loginStatus) loginStatus.textContent = `API Offline (${API_BASE})`;
+    return false;
+  }
+}
+
+function openApiConfigModal() {
+  const modal = document.getElementById('modal-api-config');
+  const input = document.getElementById('api-config-input');
+  if (input) input.value = API_BASE;
+  if (modal) modal.classList.remove('hidden');
+  testApiEndpoint();
+}
+
+async function testApiEndpoint() {
+  const input = document.getElementById('api-config-input');
+  const statusEl = document.getElementById('api-test-status');
+  const dbEl = document.getElementById('api-test-db');
+  const pingEl = document.getElementById('api-test-ping');
+  const targetUrl = (input ? input.value.trim() : API_BASE).replace(/\/$/, '');
+
+  if (statusEl) {
+    statusEl.innerHTML = '<span class="text-amber-400 font-bold animate-pulse">Connecting...</span>';
+  }
+
+  const start = performance.now();
+  try {
+    const res = await fetch(`${targetUrl}/health`);
+    const latency = Math.round(performance.now() - start);
+    if (res.ok) {
+      const data = await res.json();
+      if (statusEl) statusEl.innerHTML = '<span class="text-emerald-400 font-bold">✅ Connected</span>';
+      if (dbEl) dbEl.textContent = data.database || 'Active (SQLite)';
+      if (pingEl) pingEl.textContent = `${latency} ms`;
+    } else {
+      if (statusEl) statusEl.innerHTML = `<span class="text-rose-400 font-bold">HTTP ${res.status}</span>`;
+      if (dbEl) dbEl.textContent = 'Unavailable';
+      if (pingEl) pingEl.textContent = `${latency} ms`;
+    }
+  } catch (err) {
+    if (statusEl) statusEl.innerHTML = '<span class="text-rose-400 font-bold">❌ Connection Failed</span>';
+    if (dbEl) dbEl.textContent = 'Unreachable';
+    if (pingEl) pingEl.textContent = 'Timeout';
+  }
+}
+
+function saveApiEndpoint() {
+  const input = document.getElementById('api-config-input');
+  if (!input) return;
+  let val = input.value.trim().replace(/\/$/, '');
+  if (!val) {
+    showToast('Please provide a valid URL', 'error');
+    return;
+  }
+  if (!val.endsWith('/api') && !val.includes('/api/')) {
+    val = `${val}/api`;
+  }
+  localStorage.setItem('lw_admin_api_base', val);
+  API_BASE = val;
+  closeModal('modal-api-config');
+  showToast(`Connected to backend: ${API_BASE}`, 'success');
+  checkApiHealth();
+  refreshCurrentTab();
+}
+
+function resetApiToDefault() {
+  localStorage.removeItem('lw_admin_api_base');
+  API_BASE = getApiBase();
+  const input = document.getElementById('api-config-input');
+  if (input) input.value = API_BASE;
+  testApiEndpoint();
+}
 
 // Toast System
 function showToast(message, type = 'success') {
