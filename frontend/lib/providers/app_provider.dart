@@ -68,6 +68,8 @@ class AppProvider extends ChangeNotifier {
 
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
+  final Completer<void> _initCompleter = Completer<void>();
+  Future<void> ensureInitialized() => _initCompleter.isCompleted ? Future.value() : _initCompleter.future;
 
   bool _isServerConnected = false;
   bool get isServerConnected => _isServerConnected;
@@ -116,11 +118,25 @@ class AppProvider extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
 
-      _isLoggedIn = prefs.getBool(_prefIsLoggedInKey) ?? false;
+      final savedLoggedIn = prefs.getBool(_prefIsLoggedInKey);
 
       final userStr = prefs.getString(_prefUserKey);
       if (userStr != null) {
-        _user = UserProfile.fromJson(jsonDecode(userStr));
+        try {
+          final loadedUser = UserProfile.fromJson(jsonDecode(userStr));
+          _user = loadedUser;
+          // If a saved user profile exists and not logged out, maintain login
+          if (savedLoggedIn != false && loadedUser.id.isNotEmpty) {
+            _isLoggedIn = true;
+          } else {
+            _isLoggedIn = savedLoggedIn ?? false;
+          }
+        } catch (e) {
+          debugPrint('Error parsing stored user: $e');
+          _isLoggedIn = savedLoggedIn ?? false;
+        }
+      } else {
+        _isLoggedIn = savedLoggedIn ?? false;
       }
 
       final walletStr = prefs.getString(_prefWalletKey);
@@ -157,6 +173,9 @@ class AppProvider extends ChangeNotifier {
       debugPrint('Error loading from storage: $e');
     } finally {
       _isInitialized = true;
+      if (!_initCompleter.isCompleted) {
+        _initCompleter.complete();
+      }
       notifyListeners();
       if (_isLoggedIn) {
         syncWithDatabase();
@@ -220,6 +239,12 @@ class AppProvider extends ChangeNotifier {
     _selectedTabIndex = 0;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_prefIsLoggedInKey, false);
+    await prefs.remove(_prefUserKey);
+    await prefs.remove(_prefWalletKey);
+    await prefs.remove(_prefTransactionsKey);
+    await prefs.remove(_prefWithdrawalsKey);
+    await prefs.remove(_prefNotificationsKey);
+    _initDefaults();
     notifyListeners();
   }
 
@@ -306,7 +331,10 @@ class AppProvider extends ChangeNotifier {
   Future<void> _saveToStorage() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_prefUserKey, jsonEncode(_user.toJson()));
+      await prefs.setBool(_prefIsLoggedInKey, _isLoggedIn);
+      if (_isLoggedIn) {
+        await prefs.setString(_prefUserKey, jsonEncode(_user.toJson()));
+      }
       await prefs.setString(_prefWalletKey, jsonEncode(_wallet.toJson()));
       await prefs.setString(
           _prefArenasKey, jsonEncode(_arenas.map((a) => a.toJson()).toList()));

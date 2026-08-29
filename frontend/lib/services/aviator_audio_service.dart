@@ -128,4 +128,24 @@ class AviatorAudioService {
       } catch (_) {}
     }
   }
+
+  // --- Plinko ---
+  static void playPlinkoBounce([double pitchFactor = 0.0]) {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playPlinkoBounce($pitchFactor);');
+      } catch (_) {}
+    }
+  }
+
+  static void playPlinkoSlot([double multiplier = 1.0]) {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playPlinkoSlot($multiplier);');
+      } catch (_) {}
+    }
+  }
 }
+

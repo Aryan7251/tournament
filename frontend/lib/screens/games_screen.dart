@@ -7,6 +7,7 @@ import 'aviator_screen.dart';
 import 'mines_screen.dart';
 import 'lucky_wheel_screen.dart';
 import 'cyber_dice_screen.dart';
+import 'plinko_screen.dart';
 
 class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key});
@@ -336,14 +337,19 @@ class _GamesScreenState extends State<GamesScreen> {
       ),
       (
         title: 'Plinko Drop',
-        category: 'Pyramid Bounce',
+        category: 'Pyramid Multiplier',
         categoryGroup: 'CASINO',
-        tag: 'SOON',
+        tag: 'HOT',
         tagColor: const Color(0xFF2ED573),
         btnColor: const Color(0xFF2ED573),
         type: GameThumbnailType.plinko,
-        onTap: () {},
-        isAvailable: false,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const PlinkoScreen()),
+          );
+        },
+        isAvailable: true,
       ),
       (
         title: 'Dragon Tiger',

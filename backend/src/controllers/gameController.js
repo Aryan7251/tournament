@@ -2,6 +2,7 @@ const { aviatorEngine } = require('../services/aviatorEngine');
 const { minesEngine } = require('../services/minesEngine');
 const { wheelEngine } = require('../services/wheelEngine');
 const { diceEngine } = require('../services/diceEngine');
+const { plinkoEngine } = require('../services/plinkoEngine');
 const { db } = require('../config/database');
 
 // --- AVIATOR ROUTES ---
@@ -292,6 +293,62 @@ exports.getDiceHistory = (req, res) => {
   }
 };
 
+// --- PLINKO ROUTES ---
+
+// GET /api/games/plinko/multipliers?rows=...&risk=...
+exports.getPlinkoMultipliers = (req, res) => {
+  try {
+    const { rows, risk } = req.query;
+    const multipliers = plinkoEngine.getMultipliers(parseInt(rows, 10) || 8, risk || 'medium');
+    return res.json({
+      success: true,
+      data: multipliers
+    });
+  } catch (error) {
+    console.error('getPlinkoMultipliers error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch Plinko multipliers' });
+  }
+};
+
+// POST /api/games/plinko/drop
+exports.dropPlinko = (req, res) => {
+  try {
+    const { userId, amount, rows, risk } = req.body;
+    if (!userId || !amount) {
+      return res.status(400).json({ success: false, error: 'User ID and bet amount are required' });
+    }
+
+    const result = plinkoEngine.dropBall({
+      userId,
+      amount,
+      rows: parseInt(rows, 10) || 8,
+      risk: risk || 'medium'
+    });
+
+    if (result.success) {
+      return res.json(result);
+    } else {
+      return res.status(400).json(result);
+    }
+  } catch (error) {
+    console.error('dropPlinko error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to drop Plinko ball' });
+  }
+};
+
+// GET /api/games/plinko/history
+exports.getPlinkoHistory = (req, res) => {
+  try {
+    return res.json({
+      success: true,
+      data: plinkoEngine.getHistory()
+    });
+  } catch (error) {
+    console.error('getPlinkoHistory error:', error);
+    return res.status(500).json({ success: false, error: 'Failed to fetch Plinko history' });
+  }
+};
+
 // --- GAMES CATALOG ---
 
 // GET /api/games/catalog
@@ -308,6 +365,17 @@ exports.getGameCatalog = (req, res) => {
         maxBet: 5000,
         status: 'live',
         activePlayers: 184 + Math.floor(Math.random() * 40)
+      },
+      {
+        id: 'plinko',
+        name: 'Plinko Drop',
+        category: 'Pyramid Multiplier',
+        description: 'Drop balls down the pin pyramid with customizable rows and risk levels up to 1000x jackpot!',
+        banner: 'assets/games/plinko.png',
+        minBet: 10,
+        maxBet: 5000,
+        status: 'live',
+        activePlayers: 210 + Math.floor(Math.random() * 35)
       },
       {
         id: 'mines',

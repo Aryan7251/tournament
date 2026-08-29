@@ -3,7 +3,6 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
-import '../theme/app_theme.dart';
 import 'auth_screen.dart';
 import 'home_screen.dart';
 
@@ -101,25 +100,26 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     });
   }
 
-  void _onLoadingComplete() {
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      final provider = context.read<AppProvider>();
-      final nextScreen = provider.isLoggedIn ? const HomeScreen() : const AuthScreen();
+  Future<void> _onLoadingComplete() async {
+    final provider = context.read<AppProvider>();
+    await provider.ensureInitialized();
 
-      Navigator.of(context).pushReplacement(
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (context, animation, secondaryAnimation) => nextScreen,
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(
-              opacity: animation,
-              child: child,
-            );
-          },
-        ),
-      );
-    });
+    if (!mounted) return;
+
+    final nextScreen = provider.isLoggedIn ? const HomeScreen() : const AuthScreen();
+
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 600),
+        pageBuilder: (context, animation, secondaryAnimation) => nextScreen,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+      ),
+    );
   }
 
   @override

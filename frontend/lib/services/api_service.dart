@@ -31,10 +31,7 @@ class ApiService {
       }
       return prodBackendUrl;
     }
-    // For android emulator, 10.0.2.2 points to host machine; for real devices, LAN IP
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://172.20.10.4:5050/api';
-    }
+    // Mobile / APK builds default to the live production server
     return prodBackendUrl;
   }
 
@@ -48,7 +45,7 @@ class ApiService {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/health'))
-          .timeout(const Duration(seconds: 3));
+          .timeout(const Duration(seconds: 8));
       return response.statusCode == 200;
     } catch (_) {
       return false;
@@ -200,7 +197,7 @@ class ApiService {
     try {
       final response = await http
           .get(Uri.parse('$baseUrl/sync/$userId'))
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 10));
 
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body);
@@ -1316,4 +1313,115 @@ class ApiService {
     } catch (_) {}
     return [];
   }
+
+  // ==================== PLINKO API ====================
+
+  /// Get Plinko Multipliers for given rows & risk
+  static Future<List<double>> getPlinkoMultipliers({int rows = 8, String risk = 'medium'}) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/plinko/multipliers?rows=$rows&risk=$risk'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return (body['data'] as List).map((e) => (e as num).toDouble()).toList();
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Drop Plinko Ball
+  static Future<({
+    bool success,
+    String message,
+    String? roundId,
+    int rows,
+    String risk,
+    List<int> path,
+    int landingIndex,
+    double multiplier,
+    int wonAmount,
+    bool isWin,
+    Wallet? wallet,
+  })> dropPlinkoBall({
+    required String userId,
+    required int amount,
+    int rows = 8,
+    String risk = 'medium',
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/plinko/drop'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'amount': amount,
+          'rows': rows,
+          'risk': risk,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final rawPath = body['path'] as List<dynamic>?;
+        final path = rawPath?.map((e) => (e as num).toInt()).toList() ?? [];
+
+        return (
+          success: true,
+          message: body['message'] as String? ?? 'Ball dropped',
+          roundId: body['roundId'] as String?,
+          rows: (body['rows'] as num?)?.toInt() ?? rows,
+          risk: body['risk'] as String? ?? risk,
+          path: path,
+          landingIndex: (body['landingIndex'] as num?)?.toInt() ?? 0,
+          multiplier: (body['multiplier'] as num?)?.toDouble() ?? 0.0,
+          wonAmount: (body['wonAmount'] as num?)?.toInt() ?? 0,
+          isWin: body['isWin'] == true,
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to drop ball',
+          roundId: null,
+          rows: rows,
+          risk: risk,
+          path: <int>[],
+          landingIndex: 0,
+          multiplier: 0.0,
+          wonAmount: 0,
+          isWin: false,
+          wallet: null,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        roundId: null,
+        rows: rows,
+        risk: risk,
+        path: <int>[],
+        landingIndex: 0,
+        multiplier: 0.0,
+        wonAmount: 0,
+        isWin: false,
+        wallet: null,
+      );
+    }
+  }
+
+  /// Get Plinko Drop History
+  static Future<List<dynamic>> getPlinkoHistory() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/plinko/history'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return body['data'] as List<dynamic>;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
 }
+
