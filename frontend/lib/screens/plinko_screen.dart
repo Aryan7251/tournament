@@ -399,58 +399,78 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
     final provider = context.watch<AppProvider>();
     final balance = provider.wallet.totalBalance;
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF070B14),
-      appBar: _buildAppBar(balance),
-      body: SafeArea(
-        child: Column(
-          children: [
-            // 1. Top Recent Multipliers Bar
-            _buildRecentMultipliersStrip(),
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: const Color(0xFF070B14),
+        textSelectionTheme: const TextSelectionThemeData(
+          cursorColor: Color(0xFF2ED573),
+          selectionColor: Color(0x662ED573),
+          selectionHandleColor: Color(0xFF2ED573),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: false,
+          fillColor: Colors.transparent,
+          border: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          focusedBorder: InputBorder.none,
+          errorBorder: InputBorder.none,
+          disabledBorder: InputBorder.none,
+          contentPadding: EdgeInsets.zero,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFF070B14),
+        appBar: _buildAppBar(balance),
+        body: SafeArea(
+          child: Column(
+            children: [
+              // 1. Top Recent Multipliers Bar
+              _buildRecentMultipliersStrip(),
 
-            // 2. Main Plinko Board Area
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0E1626),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: const Color(0xFF1E293B),
-                      width: 1.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.5),
-                        blurRadius: 18,
-                        offset: const Offset(0, 6),
+              // 2. Main Plinko Board Area
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF0E1626),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF1E293B),
+                        width: 1.5,
                       ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      return CustomPaint(
-                        size: Size(constraints.maxWidth, constraints.maxHeight),
-                        painter: _PlinkoBoardPainter(
-                          rows: _selectedRows,
-                          multipliers: _multipliers,
-                          activeBalls: _activeBalls,
-                          slotHighlights: _slotHitHighlights,
-                          floatingTexts: _floatingTexts,
-                          riskColor: _riskConfigs[_selectedRisk]?.color ?? const Color(0xFF3867D6),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.5),
+                          blurRadius: 18,
+                          offset: const Offset(0, 6),
                         ),
-                      );
-                    },
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return CustomPaint(
+                          size: Size(constraints.maxWidth, constraints.maxHeight),
+                          painter: _PlinkoBoardPainter(
+                            rows: _selectedRows,
+                            multipliers: _multipliers,
+                            activeBalls: _activeBalls,
+                            slotHighlights: _slotHitHighlights,
+                            floatingTexts: _floatingTexts,
+                            riskColor: _riskConfigs[_selectedRisk]?.color ?? const Color(0xFF3867D6),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                 ),
               ),
-            ),
 
-            // 3. Game Control Console (Rows, Risk, Bet Amount, Drop CTA)
-            _buildControlsPanel(balance),
-          ],
+              // 3. Game Control Console (Rows, Risk, Bet Amount, Drop CTA)
+              _buildControlsPanel(balance),
+            ],
+          ),
         ),
       ),
     );
@@ -600,13 +620,14 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
           top: BorderSide(color: Color(0xFF1E293B), width: 1.5),
         ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Row 1: Rows Selector & Risk Selector
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Rows Selector (8, 10, 12, 14, 16)
               Expanded(
@@ -614,18 +635,24 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'ROWS',
-                      style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w800),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 2, bottom: 4),
+                      child: Text(
+                        'ROWS',
+                        style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF1E293B)),
+                      ),
                       child: Row(
                         children: _availableRows.map((r) {
                           final isSelected = _selectedRows == r;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 4),
+                          return Expanded(
                             child: InkWell(
                               onTap: _isAutoDropping
                                   ? null
@@ -633,20 +660,33 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                                       setState(() => _selectedRows = r);
                                       _loadMultipliers();
                                     },
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(7),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                                padding: const EdgeInsets.symmetric(vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? const Color(0xFF2ED573) : const Color(0xFF1E293B),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected ? const Color(0xFF2ED573) : Colors.white12,
-                                  ),
+                                  gradient: isSelected
+                                      ? const LinearGradient(
+                                          colors: [Color(0xFF2ED573), Color(0xFF10AC84)],
+                                          begin: Alignment.topCenter,
+                                          end: Alignment.bottomCenter,
+                                        )
+                                      : null,
+                                  borderRadius: BorderRadius.circular(7),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: const Color(0xFF2ED573).withValues(alpha: 0.35),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
                                 ),
+                                alignment: Alignment.center,
                                 child: Text(
                                   '$r',
                                   style: TextStyle(
-                                    color: isSelected ? Colors.black : Colors.white70,
+                                    color: isSelected ? const Color(0xFF070B14) : Colors.white70,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w900,
                                   ),
@@ -660,7 +700,7 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
 
               // Risk Selector (Low, Medium, High)
               Expanded(
@@ -668,19 +708,26 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'RISK LEVEL',
-                      style: TextStyle(color: Colors.white54, fontSize: 10, fontWeight: FontWeight.w800),
+                    const Padding(
+                      padding: EdgeInsets.only(left: 2, bottom: 4),
+                      child: Text(
+                        'RISK LEVEL',
+                        style: TextStyle(color: Colors.white60, fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 0.5),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: _riskConfigs.entries.map((entry) {
-                        final key = entry.key;
-                        final conf = entry.value;
-                        final isSelected = _selectedRisk == key;
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.only(right: 4),
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0F172A),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF1E293B)),
+                      ),
+                      child: Row(
+                        children: _riskConfigs.entries.map((entry) {
+                          final key = entry.key;
+                          final conf = entry.value;
+                          final isSelected = _selectedRisk == key;
+                          return Expanded(
                             child: InkWell(
                               onTap: _isAutoDropping
                                   ? null
@@ -688,30 +735,36 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                                       setState(() => _selectedRisk = key);
                                       _loadMultipliers();
                                     },
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(7),
                               child: Container(
-                                padding: const EdgeInsets.symmetric(vertical: 5),
+                                padding: const EdgeInsets.symmetric(vertical: 6),
                                 decoration: BoxDecoration(
-                                  color: isSelected ? conf.color : const Color(0xFF1E293B),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                    color: isSelected ? conf.color : Colors.white12,
-                                  ),
+                                  color: isSelected ? conf.color : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(7),
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: conf.color.withValues(alpha: 0.4),
+                                            blurRadius: 6,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                      : null,
                                 ),
                                 alignment: Alignment.center,
                                 child: Text(
                                   conf.label,
                                   style: TextStyle(
                                     color: isSelected ? Colors.white : Colors.white70,
-                                    fontSize: 10,
+                                    fontSize: 11,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
+                          );
+                        }).toList(),
+                      ),
                     ),
                   ],
                 ),
@@ -720,46 +773,84 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
           ),
           const SizedBox(height: 10),
 
-          // Row 2: Bet Controls & Quick Bet Chips
+          // Row 2: Bet Amount Input Field & Multiplier Adjusters
           Row(
             children: [
-              // Bet Amount Input Field
+              // Bet Amount Input Field Box (Fixed digit visibility and dark styling)
               Expanded(
-                flex: 4,
+                flex: 5,
                 child: Container(
-                  height: 42,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF161F30),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF2ED573).withValues(alpha: 0.3)),
+                    color: const Color(0xFF131D2E),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFF2ED573).withValues(alpha: 0.4),
+                      width: 1.4,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2ED573).withValues(alpha: 0.08),
+                        blurRadius: 8,
+                      ),
+                    ],
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 10),
                   child: Row(
                     children: [
-                      const Text(
-                        '₹',
-                        style: TextStyle(color: Color(0xFF2ED573), fontSize: 16, fontWeight: FontWeight.w900),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: TextField(
-                          controller: _betController,
-                          keyboardType: TextInputType.number,
-                          cursorColor: const Color(0xFF2ED573),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF2ED573).withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Text(
+                          '₹',
+                          style: TextStyle(
+                            color: Color(0xFF2ED573),
                             fontSize: 15,
+                            fontWeight: FontWeight.w900,
                           ),
-                          decoration: const InputDecoration(
-                            isDense: true,
-                            filled: true,
-                            fillColor: Colors.transparent,
-                            border: InputBorder.none,
-                            enabledBorder: InputBorder.none,
-                            focusedBorder: InputBorder.none,
-                            disabledBorder: InputBorder.none,
-                            contentPadding: EdgeInsets.zero,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Theme(
+                          data: ThemeData.dark().copyWith(
+                            inputDecorationTheme: const InputDecorationTheme(
+                              filled: false,
+                              fillColor: Colors.transparent,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                            ),
+                          ),
+                          child: TextField(
+                            controller: _betController,
+                            keyboardType: TextInputType.number,
+                            cursorColor: const Color(0xFF2ED573),
+                            cursorWidth: 2,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 16,
+                              letterSpacing: 0.5,
+                            ),
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              filled: false,
+                              fillColor: Colors.transparent,
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              disabledBorder: InputBorder.none,
+                              errorBorder: InputBorder.none,
+                              contentPadding: EdgeInsets.symmetric(vertical: 10),
+                              hintText: '0',
+                              hintStyle: TextStyle(color: Colors.white30, fontWeight: FontWeight.bold),
+                            ),
                           ),
                         ),
                       ),
@@ -769,64 +860,103 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               ),
               const SizedBox(width: 8),
 
-              // Quick Halve & Double Buttons
+              // Quick Halve (1/2) Button
               InkWell(
                 onTap: () {
                   final newBet = max(10, (_betAmount / 2).floor());
                   _betController.text = newBet.toString();
                 },
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 11),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFF162032),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF23354E)),
                   ),
                   alignment: Alignment.center,
-                  child: const Text('1/2', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w800)),
+                  child: const Text(
+                    '1/2',
+                    style: TextStyle(
+                      color: Color(0xFF94A3B8),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
+
+              // Quick Double (2X) Button
               InkWell(
                 onTap: () {
                   final newBet = min(balance, _betAmount * 2);
                   _betController.text = newBet.toString();
                 },
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 11),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(8),
+                    color: const Color(0xFF162032),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: const Color(0xFF38BDF8).withValues(alpha: 0.4)),
                   ),
                   alignment: Alignment.center,
-                  child: const Text('2X', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w800)),
+                  child: const Text(
+                    '2X',
+                    style: TextStyle(
+                      color: Color(0xFF38BDF8),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
+
+              // Quick MAX Button
               InkWell(
                 onTap: () {
                   _betController.text = balance > 0 ? balance.toString() : '100';
                 },
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
                 child: Container(
-                  height: 42,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(8),
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFD32A), Color(0xFFFFA502)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFFFD32A).withValues(alpha: 0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
                   alignment: Alignment.center,
-                  child: const Text('MAX', style: TextStyle(color: Color(0xFFFFD32A), fontWeight: FontWeight.w900, fontSize: 11)),
+                  child: const Text(
+                    'MAX',
+                    style: TextStyle(
+                      color: Color(0xFF070B14),
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
 
-          // Quick Bet Value Chips Row
+          // Quick Bet Preset Chips Row
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -837,21 +967,36 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                   child: InkWell(
                     onTap: () => _betController.text = amt.toString(),
                     borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
                       decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF2ED573).withValues(alpha: 0.2) : const Color(0xFF161F30),
+                        gradient: isSelected
+                            ? const LinearGradient(
+                                colors: [Color(0xFF2ED573), Color(0xFF10AC84)],
+                              )
+                            : null,
+                        color: isSelected ? null : const Color(0xFF131D2E),
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
-                          color: isSelected ? const Color(0xFF2ED573) : Colors.white10,
+                          color: isSelected ? const Color(0xFF2ED573) : const Color(0xFF23354E),
                         ),
+                        boxShadow: isSelected
+                            ? [
+                                BoxShadow(
+                                  color: const Color(0xFF2ED573).withValues(alpha: 0.35),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ]
+                            : null,
                       ),
                       child: Text(
                         '₹$amt',
                         style: TextStyle(
-                          color: isSelected ? const Color(0xFF2ED573) : Colors.white70,
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
+                          color: isSelected ? const Color(0xFF070B14) : const Color(0xFF94A3B8),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
@@ -868,28 +1013,51 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               // Auto Drop Toggle Button
               InkWell(
                 onTap: _toggleAutoDrop,
-                borderRadius: BorderRadius.circular(12),
-                child: Container(
-                  height: 48,
-                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                borderRadius: BorderRadius.circular(14),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 52,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
-                    color: _isAutoDropping ? const Color(0xFFFF4757) : const Color(0xFF1E293B),
-                    borderRadius: BorderRadius.circular(12),
+                    gradient: _isAutoDropping
+                        ? const LinearGradient(
+                            colors: [Color(0xFFFF4757), Color(0xFFEB3B5A)],
+                          )
+                        : const LinearGradient(
+                            colors: [Color(0xFF1E293B), Color(0xFF131D2E)],
+                          ),
+                    borderRadius: BorderRadius.circular(14),
                     border: Border.all(
-                      color: _isAutoDropping ? const Color(0xFFFF4757) : Colors.white24,
+                      color: _isAutoDropping ? const Color(0xFFFF4757) : const Color(0xFF38BDF8).withValues(alpha: 0.4),
+                      width: 1.5,
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: _isAutoDropping
+                            ? const Color(0xFFFF4757).withValues(alpha: 0.4)
+                            : Colors.black.withValues(alpha: 0.2),
+                        blurRadius: _isAutoDropping ? 12 : 4,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
-                        _isAutoDropping ? Icons.stop_circle : Icons.autorenew,
-                        color: Colors.white,
-                        size: 20,
+                        _isAutoDropping ? Icons.stop_circle_rounded : Icons.autorenew_rounded,
+                        color: _isAutoDropping ? Colors.white : const Color(0xFF38BDF8),
+                        size: 22,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         _isAutoDropping ? 'STOP' : 'AUTO',
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 13),
+                        style: TextStyle(
+                          color: _isAutoDropping ? Colors.white : const Color(0xFF38BDF8),
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                          letterSpacing: 0.5,
+                        ),
                       ),
                     ],
                   ),
@@ -897,26 +1065,53 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
               ),
               const SizedBox(width: 10),
 
-              // Main DROP BALL Action CTA
+              // Main DROP BALL Action Button
               Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: _dropBall,
-                  icon: const Icon(Icons.sports_baseball, size: 20),
-                  label: Text(
-                    _activeBalls.isEmpty ? 'DROP BALL' : 'DROP AGAIN (${_activeBalls.length})',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
+                child: Container(
+                  height: 52,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF2ED573), Color(0xFF10AC84)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF2ED573).withValues(alpha: 0.45),
+                        blurRadius: 14,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2ED573),
-                    foregroundColor: const Color(0xFF070B14),
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    elevation: 6,
-                    shadowColor: const Color(0xFF2ED573).withValues(alpha: 0.5),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _dropBall,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Center(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              Icons.sports_baseball,
+                              color: Color(0xFF070B14),
+                              size: 22,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _activeBalls.isEmpty ? 'DROP BALL' : 'DROP AGAIN (${_activeBalls.length})',
+                              style: const TextStyle(
+                                color: Color(0xFF070B14),
+                                fontSize: 16,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.8,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
