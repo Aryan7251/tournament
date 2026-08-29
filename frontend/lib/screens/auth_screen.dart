@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../providers/app_provider.dart';
 import '../services/api_service.dart';
 import '../theme/app_theme.dart';
+import 'home_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -75,7 +76,11 @@ class _AuthScreenState extends State<AuthScreen> {
           content: Text(result.message),
           backgroundColor: AppColors.accentGreen,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
         ),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -127,7 +132,11 @@ class _AuthScreenState extends State<AuthScreen> {
           content: Text(result.message),
           backgroundColor: AppColors.accentGreen,
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 2),
         ),
+      );
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeScreen()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
