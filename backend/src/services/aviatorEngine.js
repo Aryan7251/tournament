@@ -204,12 +204,17 @@ class AviatorEngine {
 
   getGameState(userId) {
     let userBets = [];
+    let userWallet = null;
     if (userId) {
       for (const [betId, bet] of this.activeBets.entries()) {
         if (bet.userId === userId) {
           userBets.push({ ...bet });
         }
       }
+      try {
+        const w = db.prepare('SELECT * FROM wallets WHERE user_id = ?').get(userId);
+        if (w) userWallet = formatWallet(w);
+      } catch (_) {}
     }
 
     return {
@@ -223,7 +228,8 @@ class AviatorEngine {
       history: this.history.slice(0, 20),
       livePlayers: this.simulatedPlayers,
       activeBetsCount: this.activeBets.size,
-      userBets
+      userBets,
+      wallet: userWallet
     };
   }
 

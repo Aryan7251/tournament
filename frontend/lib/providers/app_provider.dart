@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/arena.dart';
 import '../models/user_profile.dart';
 import '../models/wallet.dart';
+export '../models/wallet.dart';
 import '../models/transaction.dart';
 import '../models/withdrawal_request.dart';
 import '../models/notification_item.dart';
@@ -354,6 +355,47 @@ class AppProvider extends ChangeNotifier {
       depositBalance: deposit,
       winningBalance: winning,
       bonusBalance: bonus,
+    );
+    _saveToStorage();
+    notifyListeners();
+  }
+
+  void deductBet(int amount) {
+    if (amount <= 0) return;
+    int rem = amount;
+    int newBonus = _wallet.bonusBalance;
+    int newDeposit = _wallet.depositBalance;
+    int newWinning = _wallet.winningBalance;
+
+    if (newBonus >= rem) {
+      newBonus -= rem;
+      rem = 0;
+    } else {
+      rem -= newBonus;
+      newBonus = 0;
+      if (newDeposit >= rem) {
+        newDeposit -= rem;
+        rem = 0;
+      } else {
+        rem -= newDeposit;
+        newDeposit = 0;
+        newWinning = (newWinning - rem).clamp(0, 1000000000);
+      }
+    }
+
+    _wallet = _wallet.copyWith(
+      depositBalance: newDeposit,
+      winningBalance: newWinning,
+      bonusBalance: newBonus,
+    );
+    _saveToStorage();
+    notifyListeners();
+  }
+
+  void addWinnings(int amount) {
+    if (amount <= 0) return;
+    _wallet = _wallet.copyWith(
+      winningBalance: _wallet.winningBalance + amount,
     );
     _saveToStorage();
     notifyListeners();

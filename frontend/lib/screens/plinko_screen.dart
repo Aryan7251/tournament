@@ -19,6 +19,7 @@ class _ActivePlinkoBall {
   final int wonAmount;
   final Color color;
   final DateTime startTime;
+  final Wallet? serverWallet;
   int lastHitRow = -1;
   bool isFinished = false;
 
@@ -33,6 +34,7 @@ class _ActivePlinkoBall {
     required this.wonAmount,
     required this.color,
     required this.startTime,
+    this.serverWallet,
   });
 }
 
@@ -272,6 +274,16 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       if (_recentMultipliers.length > 25) _recentMultipliers.removeLast();
     });
 
+    // Credit winnings to wallet upon ball landing
+    final provider = context.read<AppProvider>();
+    if (ball.wonAmount > 0) {
+      provider.addWinnings(ball.wonAmount);
+    }
+    final hasActiveBalls = _activeBalls.any((b) => !b.isFinished && b.id != ball.id);
+    if (!hasActiveBalls && ball.serverWallet != null) {
+      provider.updateWallet(ball.serverWallet!);
+    }
+
     // Add floating win text
     _floatingTexts.add(_FloatingWinText(
       id: ball.id,
@@ -298,6 +310,9 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
       return;
     }
 
+    // Deduct bet amount immediately so user sees balance deducted on drop!
+    provider.deductBet(_betAmount);
+
     // Play initial bet sound
     AviatorAudioService.playBet();
 
@@ -318,11 +333,6 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
     if (!mounted) return;
 
     if (res.success) {
-      // Optimistically/immediately update wallet after server responds
-      if (res.wallet != null) {
-        provider.updateWallet(res.wallet!);
-      }
-
       final ball = _ActivePlinkoBall(
         id: res.roundId ?? 'pk_${DateTime.now().millisecondsSinceEpoch}',
         betAmount: currentBet,
@@ -334,12 +344,15 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
         wonAmount: res.wonAmount,
         color: ballColor,
         startTime: DateTime.now(),
+        serverWallet: res.wallet,
       );
 
       setState(() {
         _activeBalls.add(ball);
       });
     } else {
+      // Refund optimistic deduction if drop request failed
+      provider.addWinnings(currentBet);
       _stopAutoDrop();
       _showSnackBar(res.message, isError: true);
     }
@@ -732,10 +745,20 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                         child: TextField(
                           controller: _betController,
                           keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15),
+                          cursorColor: const Color(0xFF2ED573),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 15,
+                          ),
                           decoration: const InputDecoration(
-                            border: InputBorder.none,
                             isDense: true,
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            border: InputBorder.none,
+                            enabledBorder: InputBorder.none,
+                            focusedBorder: InputBorder.none,
+                            disabledBorder: InputBorder.none,
                             contentPadding: EdgeInsets.zero,
                           ),
                         ),

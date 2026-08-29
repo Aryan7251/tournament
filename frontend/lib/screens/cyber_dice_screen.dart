@@ -103,6 +103,9 @@ class _CyberDiceScreenState extends State<CyberDiceScreen> with TickerProviderSt
       return;
     }
 
+    // Deduct bet amount immediately so balance reflects the roll instantly
+    provider.deductBet(_betAmount);
+
     setState(() {
       _isRolling = true;
       _roundMessage = null;
@@ -156,6 +159,8 @@ class _CyberDiceScreenState extends State<CyberDiceScreen> with TickerProviderSt
 
       _refreshHistory();
     } else {
+      // Refund if roll request failed
+      provider.addWinnings(_betAmount);
       setState(() => _isRolling = false);
       _showSnackBar(res.message, isError: true);
     }

@@ -132,6 +132,9 @@ class _LuckyWheelScreenState extends State<LuckyWheelScreen> with SingleTickerPr
       return;
     }
 
+    // Deduct bet amount immediately so user sees deduction right when wheel starts spinning!
+    provider.deductBet(_betAmount);
+
     setState(() {
       _isSpinning = true;
       _roundMessage = null;
@@ -188,6 +191,8 @@ class _LuckyWheelScreenState extends State<LuckyWheelScreen> with SingleTickerPr
         _refreshHistory();
       });
     } else {
+      // Refund if spin request failed
+      provider.addWinnings(_betAmount);
       setState(() => _isSpinning = false);
       _showSnackBar(res.message, isError: true);
     }

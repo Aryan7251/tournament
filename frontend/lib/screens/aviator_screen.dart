@@ -204,6 +204,11 @@ class _AviatorScreenState extends State<AviatorScreen>
           slot.cashoutMultiplier = (b['cashoutMultiplier'] as num?)?.toDouble() ?? serverMultiplier;
           slot.wonAmount = (b['wonAmount'] as num?)?.toInt() ?? 0;
           AviatorAudioService.playCashout();
+          if (data['wallet'] != null) {
+            context.read<AppProvider>().updateWallet(Wallet.fromJson(data['wallet']));
+          } else if (slot.wonAmount > 0) {
+            context.read<AppProvider>().addWinnings(slot.wonAmount);
+          }
         }
       }
     }
@@ -242,6 +247,9 @@ class _AviatorScreenState extends State<AviatorScreen>
       return;
     }
 
+    // Deduct bet amount immediately so user sees balance updated in real-time
+    provider.deductBet(slot.amount);
+
     final res = await ApiService.placeAviatorBet(
       userId: provider.user.id,
       slotNum: slotNum,
@@ -260,6 +268,8 @@ class _AviatorScreenState extends State<AviatorScreen>
       AviatorAudioService.playBet();
       setState(() {});
     } else {
+      // Refund if bet placement failed
+      provider.addWinnings(slot.amount);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

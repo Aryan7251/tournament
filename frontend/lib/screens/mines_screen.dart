@@ -122,6 +122,9 @@ class _MinesScreenState extends State<MinesScreen> with TickerProviderStateMixin
       return;
     }
 
+    // Deduct bet immediately so balance updates right away
+    provider.deductBet(_betAmount);
+
     setState(() {
       _isLoading = true;
       _roundMessage = null;
@@ -157,6 +160,8 @@ class _MinesScreenState extends State<MinesScreen> with TickerProviderStateMixin
         _currentWonAmount = 0;
       });
     } else {
+      // Refund bet if start request failed
+      provider.addWinnings(_betAmount);
       _showSnackBar(res.message, isError: true);
     }
   }
