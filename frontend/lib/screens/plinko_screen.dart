@@ -812,6 +812,9 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                           controller: _betController,
                           keyboardType: TextInputType.number,
                           textAlign: TextAlign.center,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          autofillHints: null,
                           cursorColor: const Color(0xFF2ED573),
                           cursorWidth: 2,
                           style: const TextStyle(
@@ -822,7 +825,7 @@ class _PlinkoScreenState extends State<PlinkoScreen> with TickerProviderStateMix
                           ),
                           decoration: const InputDecoration(
                             isDense: true,
-                            filled: true,
+                            filled: false,
                             fillColor: Colors.transparent,
                             border: InputBorder.none,
                             enabledBorder: InputBorder.none,

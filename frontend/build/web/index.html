@@ -38,6 +38,32 @@
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
+    /* iOS Safari / WebKit Input Reset for Flutter Web */
+    input, textarea, select {
+      -webkit-appearance: none !important;
+      -moz-appearance: none !important;
+      appearance: none !important;
+      background-color: transparent !important;
+      background: transparent !important;
+      border: none !important;
+      outline: none !important;
+      box-shadow: none !important;
+      color: #ffffff !important;
+      -webkit-text-fill-color: #ffffff !important;
+    }
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover, 
+    input:-webkit-autofill:focus,
+    input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 1000px #0b1120 inset !important;
+      -webkit-text-fill-color: #ffffff !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+    flt-glass-pane input {
+      background: transparent !important;
+      background-color: transparent !important;
+      -webkit-appearance: none !important;
+    }
     #app-loading-screen {
       position: fixed;
       top: 0;
@@ -48,144 +74,135 @@
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 60%, #020617 100%);
+      background-color: #070B14;
       z-index: 999999;
-      color: #fff;
-      transition: opacity 0.5s ease;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      transition: opacity 0.35s ease, visibility 0.35s ease;
     }
-    .loading-logo-box {
-      position: relative;
-      width: 120px;
-      height: 120px;
+    .loading-brand {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+    .loading-icon-badge {
+      width: 64px;
+      height: 64px;
+      border-radius: 16px;
+      background-color: #0F172A;
+      border: 1.5px solid #1E293B;
       display: flex;
       align-items: center;
       justify-content: center;
-    }
-    .loading-ring {
-      position: absolute;
-      width: 110px;
-      height: 110px;
-      border-radius: 50%;
-      border: 3px solid transparent;
-      border-top-color: #6366f1;
-      border-right-color: #38bdf8;
-      border-bottom-color: #10b981;
-      animation: spinRing 2s linear infinite;
-    }
-    .loading-pulse-glow {
-      position: absolute;
-      width: 80px;
-      height: 80px;
-      border-radius: 50%;
-      background: rgba(99, 102, 241, 0.35);
-      filter: blur(15px);
-      animation: pulseGlow 1.5s ease-in-out infinite alternate;
-    }
-    .loading-emblem {
       position: relative;
-      width: 74px;
-      height: 74px;
-      border-radius: 20px;
-      background: linear-gradient(135deg, #4f46e5, #2563eb, #0d9488);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-      border: 1.5px solid rgba(255,255,255,0.25);
     }
-    .loading-emblem svg {
-      width: 38px;
-      height: 38px;
-      fill: #ffffff;
+    .loading-icon-badge svg {
+      width: 32px;
+      height: 32px;
+      fill: #2ED573;
     }
-    .brand-title {
-      font-size: 26px;
+    .loading-title {
+      font-size: 22px;
       font-weight: 900;
-      letter-spacing: 3px;
-      margin-top: 24px;
+      letter-spacing: 2.5px;
+      color: #FFFFFF;
       display: flex;
-      gap: 4px;
+      align-items: center;
+      gap: 2px;
     }
-    .brand-accent {
-      background: linear-gradient(135deg, #38bdf8, #818cf8);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .loading-title-accent {
+      color: #2ED573;
     }
-    .brand-tag {
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      color: #94a3b8;
-      margin-top: 6px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .progress-track {
-      width: 180px;
-      height: 4px;
-      background: #1e293b;
-      border-radius: 10px;
-      margin-top: 36px;
+    .loading-track {
+      width: 140px;
+      height: 3px;
+      background-color: #1E293B;
+      border-radius: 4px;
+      margin-top: 12px;
       overflow: hidden;
       position: relative;
     }
-    .progress-fill {
+    .loading-bar {
       position: absolute;
       top: 0;
       left: 0;
       height: 100%;
-      width: 45%;
-      background: linear-gradient(90deg, #38bdf8, #6366f1, #10b981);
-      border-radius: 10px;
-      animation: progressIndeterminate 1.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      width: 40%;
+      background-color: #2ED573;
+      border-radius: 4px;
+      animation: flatBarAnim 1.2s ease-in-out infinite;
     }
-    @keyframes spinRing {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
+    .loading-subtext {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.8px;
+      color: #64748B;
+      margin-top: 10px;
     }
-    @keyframes pulseGlow {
-      0% { transform: scale(0.9); opacity: 0.5; }
-      100% { transform: scale(1.15); opacity: 0.9; }
-    }
-    @keyframes progressIndeterminate {
-      0% { left: -40%; width: 30%; }
-      50% { left: 30%; width: 60%; }
-      100% { left: 100%; width: 30%; }
+    @keyframes flatBarAnim {
+      0% { left: -40%; width: 40%; }
+      50% { left: 30%; width: 50%; }
+      100% { left: 100%; width: 40%; }
     }
   </style>
 </head>
 <body>
-  <!-- Web Startup Animated Preloader -->
+  <!-- Flat Minimalist App Loading Screen -->
   <div id="app-loading-screen">
-    <div class="loading-logo-box">
-      <div class="loading-ring"></div>
-      <div class="loading-pulse-glow"></div>
-      <div class="loading-emblem">
+    <div class="loading-brand">
+      <div class="loading-icon-badge">
         <svg viewBox="0 0 24 24">
           <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7H8v3H6v-3H3v-2h3V8h2v3h3v2zm4.5 2c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm3-3c-.83 0-1.5-.67-1.5-1.5S17.67 9 18.5 9s1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/>
         </svg>
       </div>
-    </div>
-    <div class="brand-title">
-      <span>LUCKY</span><span class="brand-accent">WIN</span>
-    </div>
-    <div class="brand-tag">PREMIER GAMING & ESPORTS ARENA</div>
-    <div class="progress-track">
-      <div class="progress-fill"></div>
+      <div class="loading-title">
+        <span>LUCKY</span><span class="loading-title-accent">WIN</span>
+      </div>
+      <div class="loading-track">
+        <div class="loading-bar"></div>
+      </div>
+      <div class="loading-subtext">Loading arena...</div>
     </div>
   </div>
 
   <script>
-    // Remove loading screen when Flutter is ready
-    window.addEventListener('flutter-first-frame', function () {
-      const loader = document.getElementById('app-loading-screen');
-      if (loader) {
-        loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 500);
+    // Robust, fail-safe removal of loading screen
+    (function() {
+      let removed = false;
+      function dismissLoader() {
+        if (removed) return;
+        removed = true;
+        const loader = document.getElementById('app-loading-screen');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.pointerEvents = 'none';
+          setTimeout(function() {
+            try { loader.remove(); } catch(e) {}
+          }, 350);
+        }
       }
-    });
+
+      // 1. Flutter native first frame event
+      window.addEventListener('flutter-first-frame', dismissLoader);
+
+      // 2. Observer for Flutter DOM elements
+      const observer = new MutationObserver(function() {
+        if (document.querySelector('flt-glass-pane') ||
+            document.querySelector('flutter-view') ||
+            document.querySelector('flt-scene-host') ||
+            document.querySelector('canvas')) {
+          setTimeout(dismissLoader, 150);
+          try { observer.disconnect(); } catch(e) {}
+        }
+      });
+      try {
+        observer.observe(document.body, { childList: true, subtree: true });
+      } catch(e) {}
+
+      // 3. Fallback timeout: NEVER stay stuck on loading screen
+      setTimeout(dismissLoader, 2200);
+    })();
 
     // Web Audio Synthesizer for Games (Aviator, Mines, Lucky Wheel, Cyber Dice)
     (function() {
