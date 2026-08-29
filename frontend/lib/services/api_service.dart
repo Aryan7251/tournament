@@ -907,4 +907,413 @@ class ApiService {
       );
     }
   }
+
+  // ==================== MINES GOLD API ====================
+
+  /// Start a Mines Game
+  static Future<({
+    bool success,
+    String message,
+    Map<String, dynamic>? round,
+    Wallet? wallet,
+    bool restored,
+  })> startMines({
+    required String userId,
+    required int amount,
+    int mineCount = 3,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/mines/start'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'amount': amount,
+          'mineCount': mineCount,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        return (
+          success: true,
+          message: body['message'] as String? ?? 'Mines game started',
+          round: body['round'] as Map<String, dynamic>?,
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+          restored: body['restored'] == true,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to start game',
+          round: null,
+          wallet: null,
+          restored: false,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        round: null,
+        wallet: null,
+        restored: false,
+      );
+    }
+  }
+
+  /// Reveal Tile in Mines
+  static Future<({
+    bool success,
+    String message,
+    String status,
+    bool isMine,
+    int tileIndex,
+    double currentMultiplier,
+    int wonAmount,
+    double? nextMultiplier,
+    List<int>? allMines,
+    Map<String, dynamic>? round,
+    Wallet? wallet,
+  })> revealMinesTile({
+    required String userId,
+    required String roundId,
+    required int tileIndex,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/mines/reveal'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'roundId': roundId,
+          'tileIndex': tileIndex,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final rawMines = body['allMines'] as List<dynamic>?;
+        final allMines = rawMines?.map((e) => (e as num).toInt()).toList();
+
+        return (
+          success: true,
+          message: body['message'] as String? ?? (body['isMine'] == true ? 'Exploded!' : 'Diamond Found!'),
+          status: body['status'] as String? ?? 'active',
+          isMine: body['isMine'] == true,
+          tileIndex: (body['tileIndex'] as num?)?.toInt() ?? tileIndex,
+          currentMultiplier: (body['currentMultiplier'] as num?)?.toDouble() ?? 0.0,
+          wonAmount: (body['wonAmount'] as num?)?.toInt() ?? 0,
+          nextMultiplier: (body['nextMultiplier'] as num?)?.toDouble(),
+          allMines: allMines,
+          round: body['round'] as Map<String, dynamic>?,
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to reveal tile',
+          status: 'error',
+          isMine: false,
+          tileIndex: tileIndex,
+          currentMultiplier: 0.0,
+          wonAmount: 0,
+          nextMultiplier: null,
+          allMines: null,
+          round: null,
+          wallet: null,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        status: 'error',
+        isMine: false,
+        tileIndex: tileIndex,
+        currentMultiplier: 0.0,
+        wonAmount: 0,
+        nextMultiplier: null,
+        allMines: null,
+        round: null,
+        wallet: null,
+      );
+    }
+  }
+
+  /// Cashout Mines
+  static Future<({
+    bool success,
+    String message,
+    double multiplier,
+    int wonAmount,
+    List<int>? allMines,
+    Map<String, dynamic>? round,
+    Wallet? wallet,
+  })> cashoutMines({
+    required String userId,
+    required String roundId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/mines/cashout'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'roundId': roundId,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        final rawMines = body['allMines'] as List<dynamic>?;
+        final allMines = rawMines?.map((e) => (e as num).toInt()).toList();
+
+        return (
+          success: true,
+          message: body['message'] as String? ?? 'Cashed out successfully',
+          multiplier: (body['multiplier'] as num?)?.toDouble() ?? 1.0,
+          wonAmount: (body['wonAmount'] as num?)?.toInt() ?? 0,
+          allMines: allMines,
+          round: body['round'] as Map<String, dynamic>?,
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to cashout',
+          multiplier: 0.0,
+          wonAmount: 0,
+          allMines: null,
+          round: null,
+          wallet: null,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        multiplier: 0.0,
+        wonAmount: 0,
+        allMines: null,
+        round: null,
+        wallet: null,
+      );
+    }
+  }
+
+  /// Get Active Mines Round
+  static Future<Map<String, dynamic>?> getMinesState(String userId) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/mines/state?userId=$userId'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true) {
+          return body['data'] as Map<String, dynamic>?;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Get Mines History
+  static Future<List<dynamic>> getMinesHistory() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/mines/history'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return body['data'] as List<dynamic>;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // ==================== LUCKY WHEEL API ====================
+
+  /// Get Wheel Segments
+  static Future<List<dynamic>> getWheelSegments(String risk) async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/wheel/segments?risk=$risk'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return body['data'] as List<dynamic>;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  /// Spin Wheel
+  static Future<({
+    bool success,
+    String message,
+    int landingIndex,
+    double multiplier,
+    int wonAmount,
+    bool isWin,
+    Map<String, dynamic>? segment,
+    Wallet? wallet,
+  })> spinWheel({
+    required String userId,
+    required int amount,
+    String risk = 'medium',
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/wheel/spin'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'amount': amount,
+          'risk': risk,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        return (
+          success: true,
+          message: body['message'] as String? ?? 'Wheel spun successfully',
+          landingIndex: (body['landingIndex'] as num?)?.toInt() ?? 0,
+          multiplier: (body['multiplier'] as num?)?.toDouble() ?? 0.0,
+          wonAmount: (body['wonAmount'] as num?)?.toInt() ?? 0,
+          isWin: body['isWin'] == true,
+          segment: body['segment'] as Map<String, dynamic>?,
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to spin wheel',
+          landingIndex: 0,
+          multiplier: 0.0,
+          wonAmount: 0,
+          isWin: false,
+          segment: null,
+          wallet: null,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        landingIndex: 0,
+        multiplier: 0.0,
+        wonAmount: 0,
+        isWin: false,
+        segment: null,
+        wallet: null,
+      );
+    }
+  }
+
+  /// Get Wheel History
+  static Future<List<dynamic>> getWheelHistory() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/wheel/history'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return body['data'] as List<dynamic>;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  // ==================== CYBER DICE API ====================
+
+  /// Roll Cyber Dice
+  static Future<({
+    bool success,
+    String message,
+    double rollResult,
+    int dice1,
+    int dice2,
+    int sum,
+    bool isWin,
+    double multiplier,
+    int wonAmount,
+    double winChance,
+    Wallet? wallet,
+  })> rollDice({
+    required String userId,
+    required int amount,
+    String mode = 'slider',
+    double target = 50.0,
+    String condition = 'under',
+    String choice = 'low',
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/games/dice/roll'),
+        headers: _headers,
+        body: jsonEncode({
+          'userId': userId,
+          'amount': amount,
+          'mode': mode,
+          'target': target,
+          'condition': condition,
+          'choice': choice,
+        }),
+      );
+      final body = jsonDecode(response.body);
+      if (response.statusCode == 200 && body['success'] == true) {
+        return (
+          success: true,
+          message: body['message'] as String? ?? 'Dice rolled successfully',
+          rollResult: (body['rollResult'] as num?)?.toDouble() ?? 0.0,
+          dice1: (body['dice1'] as num?)?.toInt() ?? 1,
+          dice2: (body['dice2'] as num?)?.toInt() ?? 1,
+          sum: (body['sum'] as num?)?.toInt() ?? 2,
+          isWin: body['isWin'] == true,
+          multiplier: (body['multiplier'] as num?)?.toDouble() ?? 0.0,
+          wonAmount: (body['wonAmount'] as num?)?.toInt() ?? 0,
+          winChance: (body['winChance'] as num?)?.toDouble() ?? 0.0,
+          wallet: body['wallet'] != null ? Wallet.fromJson(body['wallet']) : null,
+        );
+      } else {
+        return (
+          success: false,
+          message: body['error'] as String? ?? 'Failed to roll dice',
+          rollResult: 0.0,
+          dice1: 1,
+          dice2: 1,
+          sum: 2,
+          isWin: false,
+          multiplier: 0.0,
+          wonAmount: 0,
+          winChance: 0.0,
+          wallet: null,
+        );
+      }
+    } catch (e) {
+      return (
+        success: false,
+        message: 'Network error: $e',
+        rollResult: 0.0,
+        dice1: 1,
+        dice2: 1,
+        sum: 2,
+        isWin: false,
+        multiplier: 0.0,
+        wonAmount: 0,
+        winChance: 0.0,
+        wallet: null,
+      );
+    }
+  }
+
+  /// Get Dice History
+  static Future<List<dynamic>> getDiceHistory() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/games/dice/history'), headers: _headers);
+      if (response.statusCode == 200) {
+        final body = jsonDecode(response.body);
+        if (body['success'] == true && body['data'] is List) {
+          return body['data'] as List<dynamic>;
+        }
+      }
+    } catch (_) {}
+    return [];
+  }
 }

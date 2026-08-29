@@ -18,6 +18,7 @@ class AviatorAudioService {
     setMuted(!_muted);
   }
 
+  // --- Aviator ---
   static void startEngine() {
     if (_muted) return;
     if (kIsWeb) {
@@ -76,6 +77,54 @@ class AviatorAudioService {
     if (kIsWeb) {
       try {
         evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playBet();');
+      } catch (_) {}
+    }
+  }
+
+  // --- Mines Gold ---
+  static void playDiamond() {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playDiamond();');
+      } catch (_) {}
+    }
+  }
+
+  static void playExplosion() {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playExplosion();');
+      } catch (_) {}
+    }
+  }
+
+  // --- Lucky Wheel ---
+  static void playWheelClick() {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playWheelClick();');
+      } catch (_) {}
+    }
+  }
+
+  static void playWinFanfare() {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playWinFanfare();');
+      } catch (_) {}
+    }
+  }
+
+  // --- Cyber Dice ---
+  static void playDiceRoll() {
+    if (_muted) return;
+    if (kIsWeb) {
+      try {
+        evalAudioJs('if (window.aviatorAudio) window.aviatorAudio.playDiceRoll();');
       } catch (_) {}
     }
   }

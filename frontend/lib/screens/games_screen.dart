@@ -4,6 +4,9 @@ import '../providers/app_provider.dart';
 import '../theme/app_theme.dart';
 import '../widgets/game_thumbnail.dart';
 import 'aviator_screen.dart';
+import 'mines_screen.dart';
+import 'lucky_wheel_screen.dart';
+import 'cyber_dice_screen.dart';
 
 class GamesScreen extends StatefulWidget {
   const GamesScreen({super.key});
@@ -273,6 +276,7 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CRASH',
         tag: 'LIVE',
         tagColor: const Color(0xFFE51D35),
+        btnColor: const Color(0xFFE51D35),
         type: GameThumbnailType.aviator,
         onTap: () {
           Navigator.push(
@@ -288,9 +292,15 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CASINO',
         tag: 'HOT',
         tagColor: const Color(0xFF00D2D3),
+        btnColor: const Color(0xFF00D2D3),
         type: GameThumbnailType.mines,
-        onTap: () {},
-        isAvailable: false,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const MinesScreen()),
+          );
+        },
+        isAvailable: true,
       ),
       (
         title: 'Lucky Wheel',
@@ -298,19 +308,31 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CASINO',
         tag: 'POPULAR',
         tagColor: const Color(0xFFFF9F1A),
+        btnColor: const Color(0xFFFF9F1A),
         type: GameThumbnailType.wheel,
-        onTap: () {},
-        isAvailable: false,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const LuckyWheelScreen()),
+          );
+        },
+        isAvailable: true,
       ),
       (
         title: 'Cyber Dice',
-        category: 'High / Low',
+        category: 'High / Low & Target',
         categoryGroup: 'CASINO',
-        tag: 'SOON',
+        tag: 'HOT',
         tagColor: const Color(0xFF9C88FF),
+        btnColor: const Color(0xFF9C88FF),
         type: GameThumbnailType.dice,
-        onTap: () {},
-        isAvailable: false,
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const CyberDiceScreen()),
+          );
+        },
+        isAvailable: true,
       ),
       (
         title: 'Plinko Drop',
@@ -318,6 +340,7 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CASINO',
         tag: 'SOON',
         tagColor: const Color(0xFF2ED573),
+        btnColor: const Color(0xFF2ED573),
         type: GameThumbnailType.plinko,
         onTap: () {},
         isAvailable: false,
@@ -328,6 +351,7 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CARDS',
         tag: 'SOON',
         tagColor: const Color(0xFFFF4757),
+        btnColor: const Color(0xFFFF4757),
         type: GameThumbnailType.dragonTiger,
         onTap: () {},
         isAvailable: false,
@@ -338,6 +362,7 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CASINO',
         tag: 'SOON',
         tagColor: const Color(0xFF20BF6B),
+        btnColor: const Color(0xFF20BF6B),
         type: GameThumbnailType.penalty,
         onTap: () {},
         isAvailable: false,
@@ -348,6 +373,7 @@ class _GamesScreenState extends State<GamesScreen> {
         categoryGroup: 'CRASH',
         tag: 'SOON',
         tagColor: const Color(0xFF3867D6),
+        btnColor: const Color(0xFF3867D6),
         type: GameThumbnailType.jetX,
         onTap: () {},
         isAvailable: false,
@@ -379,7 +405,7 @@ class _GamesScreenState extends State<GamesScreen> {
               color: AppColors.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: g.isAvailable ? const Color(0xFFE51D35).withValues(alpha: 0.4) : AppColors.border,
+                color: g.isAvailable ? g.tagColor.withValues(alpha: 0.4) : AppColors.border,
                 width: g.isAvailable ? 1.5 : 1,
               ),
               boxShadow: [
@@ -484,7 +510,7 @@ class _GamesScreenState extends State<GamesScreen> {
                         child: ElevatedButton(
                           onPressed: g.isAvailable ? g.onTap : null,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: g.isAvailable ? const Color(0xFFE51D35) : AppColors.surfaceElevated,
+                            backgroundColor: g.isAvailable ? g.btnColor : AppColors.surfaceElevated,
                             foregroundColor: g.isAvailable ? Colors.white : AppColors.textMuted,
                             padding: EdgeInsets.zero,
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
