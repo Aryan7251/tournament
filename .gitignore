@@ -40,3 +40,4 @@ frontend/android/app/build/
 Thumbs.db
 *.swp
 *.swo
+*.apk

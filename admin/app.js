@@ -38,6 +38,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Setup login handler
   const loginForm = document.getElementById('login-form');
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
+
+  // Global Internet connectivity listeners
+  window.addEventListener('offline', () => {
+    showToast('No Internet Connection. Please check your network connection.', 'error');
+    const badgeDot = document.getElementById('api-status-dot');
+    const badgeText = document.getElementById('api-status-text');
+    if (badgeDot) badgeDot.className = 'w-2 h-2 rounded-full bg-rose-500 animate-bounce';
+    if (badgeText) badgeText.textContent = 'No Internet';
+  });
+
+  window.addEventListener('online', () => {
+    showToast('Internet Connection Restored', 'success');
+    checkApiHealth();
+  });
 });
 
 // Live Health & Connectivity

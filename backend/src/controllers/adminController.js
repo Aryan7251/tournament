@@ -376,20 +376,20 @@ exports.reviewKyc = (req, res) => {
     db.prepare('UPDATE users SET kyc_status = ?, updated_at = ? WHERE id = ?').run(finalStatus, now, userId);
 
     // Notification
-    const notifTitle = status === 'verified' ? 'KYC Verification Approved! ✅' : 'KYC Verification Rejected ❌';
-    const notifMsg = status === 'verified' 
+    const notifTitle = finalStatus === 'verified' ? 'KYC Verification Approved! ✅' : 'KYC Verification Rejected ❌';
+    const notifMsg = finalStatus === 'verified' 
       ? 'Congratulations! Your identity document has been verified. Unlimited withdrawals unlocked.'
       : `Your KYC submission was rejected: ${reason || 'Document unreadable or invalid'}. Please re-submit valid document.`;
 
     db.prepare(`
       INSERT INTO notifications (id, user_id, title, message, type, timestamp, read)
       VALUES (?, ?, ?, ?, ?, ?, 0)
-    `).run(`notif_${Date.now()}`, userId, notifTitle, notifMsg, status === 'verified' ? 'success' : 'alert', now);
+    `).run(`notif_${Date.now()}`, userId, notifTitle, notifMsg, finalStatus === 'verified' ? 'success' : 'alert', now);
 
     return res.json({
       success: true,
-      message: `KYC status set to ${status}`,
-      kycStatus: status
+      message: `KYC status set to ${finalStatus}`,
+      kycStatus: finalStatus
     });
   } catch (error) {
     console.error('reviewKyc error:', error);

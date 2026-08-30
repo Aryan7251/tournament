@@ -290,7 +290,7 @@ exports.verifyRazorpayPayment = async (req, res) => {
     // Record Notification
     db.prepare(`
       INSERT INTO notifications (
-        id, user_id, title, message, type, timestamp, is_read
+        id, user_id, title, message, type, timestamp, read
       )
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `).run(

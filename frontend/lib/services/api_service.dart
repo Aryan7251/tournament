@@ -40,6 +40,30 @@ class ApiService {
     'Accept': 'application/json',
   };
 
+  static String _formatNetworkError(dynamic e) {
+    if (e == null) {
+      return 'Network connection error. Please try again.';
+    }
+    final str = e.toString().toLowerCase();
+    if (str.contains('socketexception') ||
+        str.contains('clientexception') ||
+        str.contains('failed host lookup') ||
+        str.contains('connection refused') ||
+        str.contains('network is unreachable') ||
+        str.contains('timed out') ||
+        str.contains('timeoutexception') ||
+        str.contains('handshakeexception')) {
+      return 'No internet connection. Please check your network connection.';
+    }
+    if (str.contains('formatexception') || str.contains('syntaxerror')) {
+      return 'Server is warming up or temporarily unavailable. Please retry in a moment.';
+    }
+    if (str.contains('httpexception')) {
+      return 'HTTP communication error. Please check your connection and retry.';
+    }
+    return 'Network connection error. Please check your internet connection.';
+  }
+
   /// Check if the Node.js backend server is running and reachable
   static Future<bool> isServerAvailable() async {
     try {
@@ -78,7 +102,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network connection failed', user: null);
+      return (success: false, message: _formatNetworkError(e), user: null);
     }
   }
 
@@ -117,7 +141,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', user: null);
+      return (success: false, message: _formatNetworkError(e), user: null);
     }
   }
 
@@ -147,7 +171,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', demoOtp: null);
+      return (success: false, message: _formatNetworkError(e), demoOtp: null);
     }
   }
 
@@ -180,7 +204,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e');
+      return (success: false, message: _formatNetworkError(e));
     }
   }
 
@@ -569,7 +593,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', wallet: null);
+      return (success: false, message: _formatNetworkError(e), wallet: null);
     }
   }
 
@@ -650,7 +674,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', arena: null);
+      return (success: false, message: _formatNetworkError(e), arena: null);
     }
   }
 
@@ -680,7 +704,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', arena: null);
+      return (success: false, message: _formatNetworkError(e), arena: null);
     }
   }
 
@@ -744,7 +768,7 @@ class ApiService {
         message: (body['message'] ?? body['error'] ?? 'Request completed') as String,
       );
     } catch (e) {
-      return (success: false, message: 'Network error: $e');
+      return (success: false, message: _formatNetworkError(e));
     }
   }
 
@@ -761,7 +785,7 @@ class ApiService {
         message: (body['message'] ?? body['error'] ?? 'Reset complete') as String,
       );
     } catch (e) {
-      return (success: false, message: 'Network error: $e');
+      return (success: false, message: _formatNetworkError(e));
     }
   }
 
@@ -819,7 +843,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', bet: null, wallet: null);
+      return (success: false, message: _formatNetworkError(e), bet: null, wallet: null);
     }
   }
 
@@ -852,7 +876,7 @@ class ApiService {
         );
       }
     } catch (e) {
-      return (success: false, message: 'Network error: $e', wallet: null);
+      return (success: false, message: _formatNetworkError(e), wallet: null);
     }
   }
 
@@ -897,7 +921,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         wonAmount: 0,
         cashoutMultiplier: 1.0,
         wallet: null,
@@ -950,7 +974,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         round: null,
         wallet: null,
         restored: false,
@@ -1022,7 +1046,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         status: 'error',
         isMine: false,
         tileIndex: tileIndex,
@@ -1086,7 +1110,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         multiplier: 0.0,
         wonAmount: 0,
         allMines: null,
@@ -1192,7 +1216,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         landingIndex: 0,
         multiplier: 0.0,
         wonAmount: 0,
@@ -1286,7 +1310,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         rollResult: 0.0,
         dice1: 1,
         dice2: 1,
@@ -1396,7 +1420,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         roundId: null,
         rows: rows,
         risk: risk,
@@ -1451,7 +1475,7 @@ class ApiService {
     } catch (e) {
       return (
         success: false,
-        message: 'Network error: $e',
+        message: _formatNetworkError(e),
         wallet: null,
         wonAmount: 0,
         multiplier: 1.0,

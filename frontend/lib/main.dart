@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 import 'providers/app_provider.dart';
 import 'screens/auth_screen.dart';
 import 'screens/home_screen.dart';
+import 'services/connectivity_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/connectivity_banner.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  ConnectivityService().initialize();
   runApp(const TournamentApp());
 }
 
@@ -21,6 +24,11 @@ class TournamentApp extends StatelessWidget {
         title: 'LuckyWin',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        builder: (context, child) {
+          return ConnectivityWrapper(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
         home: const _AppRoot(),
       ),
     );

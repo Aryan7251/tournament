@@ -11,6 +11,7 @@ import '../models/transaction.dart';
 import '../models/withdrawal_request.dart';
 import '../models/notification_item.dart';
 import '../services/api_service.dart';
+import '../services/connectivity_service.dart';
 
 class AppProvider extends ChangeNotifier {
   static const String _prefUserKey = 'luckywin_user_clean_v5';
@@ -22,6 +23,7 @@ class AppProvider extends ChangeNotifier {
   static const String _prefIsLoggedInKey = 'luckywin_is_authenticated_v1';
 
   Timer? _liveSyncTimer;
+  StreamSubscription<bool>? _connectivitySub;
 
   int _selectedTabIndex = 0;
   int get selectedTabIndex => _selectedTabIndex;
@@ -79,6 +81,23 @@ class AppProvider extends ChangeNotifier {
     _initDefaults();
     _loadFromStorage();
     _startLiveSyncTimer();
+    _listenToConnectivity();
+  }
+
+  void _listenToConnectivity() {
+    _connectivitySub?.cancel();
+    _connectivitySub = ConnectivityService().onConnectivityChanged.listen((isOnline) {
+      if (isOnline && _isLoggedIn) {
+        syncWithDatabase();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _liveSyncTimer?.cancel();
+    _connectivitySub?.cancel();
+    super.dispose();
   }
 
   void _startLiveSyncTimer() {
@@ -1047,10 +1066,5 @@ class AppProvider extends ChangeNotifier {
     notifyListeners();
     await syncWithDatabase();
   }
-
-  @override
-  void dispose() {
-    _liveSyncTimer?.cancel();
-    super.dispose();
-  }
 }
+

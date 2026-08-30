@@ -17,24 +17,40 @@ const MIME_TYPES = {
 };
 
 const server = http.createServer((req, res) => {
-  let filePath = path.join(PUBLIC_DIR, req.url === '/' ? 'index.html' : req.url.split('?')[0]);
-  
-  if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-    filePath = path.join(PUBLIC_DIR, 'index.html');
-  }
+  try {
+    const rawPath = (req.url || '/').split('?')[0];
+    const safeRelPath = path.normalize(rawPath).replace(/^(\.\.[\/\\])+/, '');
+    let filePath = path.resolve(PUBLIC_DIR, safeRelPath === '/' || safeRelPath === '.' ? 'index.html' : safeRelPath.replace(/^\//, ''));
 
-  const ext = path.extname(filePath).toLowerCase();
-  const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end('Server Error');
-      return;
+    // Prevent path traversal outside PUBLIC_DIR
+    if (!filePath.startsWith(PUBLIC_DIR)) {
+      filePath = path.join(PUBLIC_DIR, 'index.html');
     }
-    res.writeHead(200, { 'Content-Type': contentType });
-    res.end(content);
-  });
+
+    try {
+      if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
+        filePath = path.join(PUBLIC_DIR, 'index.html');
+      }
+    } catch (_) {
+      filePath = path.join(PUBLIC_DIR, 'index.html');
+    }
+
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+    fs.readFile(filePath, (err, content) => {
+      if (err) {
+        res.writeHead(500, { 'Content-Type': 'text/plain' });
+        res.end('Server Error');
+        return;
+      }
+      res.writeHead(200, { 'Content-Type': contentType });
+      res.end(content);
+    });
+  } catch (err) {
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Server Internal Error');
+  }
 });
 
 server.listen(PORT, '0.0.0.0', () => {
