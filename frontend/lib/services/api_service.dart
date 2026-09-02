@@ -10,7 +10,7 @@ import '../models/notification_item.dart';
 
 class ApiService {
   static const String prodBackendUrl =
-      'https://tournament-backend-idtb.onrender.com/api';
+      'https://tournament-backend-txyi.onrender.com/api';
 
   static const String _configuredBackendUrl = String.fromEnvironment(
     'BACKEND_URL',

@@ -1,4 +1,4 @@
-const PROD_BACKEND_URL = 'https://tournament-backend-idtb.onrender.com/api';
+const PROD_BACKEND_URL = 'https://tournament-backend-txyi.onrender.com/api';
 
 const getApiBase = () => {
   if (window.API_BASE) return window.API_BASE;

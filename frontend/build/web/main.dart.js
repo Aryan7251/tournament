@@ -26755,7 +26755,7 @@ au8:function au8(a){this.a=a},
 au7:function au7(a){this.a=a},
 cu(){var s=A.Ov().gls().length!==0?A.Ov().gls():"localhost"
 if(s==="localhost"||s==="127.0.0.1")return"http://"+s+":5050/api"
-return"https://tournament-backend-idtb.onrender.com/api"},
+return"https://tournament-backend-txyi.onrender.com/api"},
 YF(){var s=0,r=A.J(t.y),q,p=2,o=[],n,m,l,k
 var $async$YF=A.K(function(a,b){if(a===1){o.push(b)
 s=p}while(true)switch(s){case 0:p=4
